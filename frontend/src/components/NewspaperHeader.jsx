@@ -10,9 +10,9 @@ const NewspaperHeader = () => {
             <img 
               src="https://customer-assets.emergentagent.com/job_kid-news-refresh/artifacts/6s7hepki_Gemini_Generated_Image_vuim8qvuim8qvuim.png"
               alt="Calusa Elementary School"
-              className="w-full h-full object-cover opacity-30"
+              className="w-full h-full object-cover opacity-60"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/60"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent"></div>
           </div>
 
           {/* Content Overlay */}
