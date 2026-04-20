@@ -1,7 +1,7 @@
 import React from 'react';
 import AnnouncementTicker from '../components/AnnouncementTicker';
 import Header from '../components/Header';
-import HeroSection from '../components/HeroSection';
+import NewspaperHeader from '../components/NewspaperHeader';
 import ArticleCard from '../components/ArticleCard';
 import StudentSpotlight from '../components/StudentSpotlight';
 import AchievementsSection from '../components/AchievementsSection';
@@ -18,7 +18,7 @@ const HomePage = () => {
     <div className="min-h-screen bg-[#FFF8E7]">
       <AnnouncementTicker />
       <Header />
-      <HeroSection />
+      <NewspaperHeader />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -23,7 +23,7 @@ const Header = () => {
               <span className="text-white font-bold text-xl">C</span>
             </div>
             <div>
-              <h1 className="text-[#0f1e42] font-bold text-xl">The Calusa Canvas</h1>
+              <h1 className="text-[#0f1e42] font-bold text-xl">The Calusa Times</h1>
               <p className="text-xs text-gray-600 uppercase tracking-wide">Student Newspaper</p>
             </div>
           </Link>

@@ -14,41 +14,52 @@ const categoryColors = {
 const ArticleCard = ({ article, featured = false }) => {
   return (
     <Link to={`/articles/${article.id}`}>
-      <div className={`bg-white rounded-xl border-2 border-gray-200 p-6 transition-all hover:shadow-lg hover:border-[#0f1e42] hover:-translate-y-1 ${
+      <div className={`bg-white rounded-xl border-2 border-gray-200 overflow-hidden transition-all hover:shadow-lg hover:border-[#0f1e42] hover:-translate-y-1 ${
         featured ? 'border-[#FFD700] shadow-md' : ''
       }`}>
-        {featured && (
+        {article.image && (
+          <div className="relative h-48 overflow-hidden">
+            <img 
+              src={article.image} 
+              alt={article.title}
+              className="w-full h-full object-cover transition-transform hover:scale-105"
+            />
+            {featured && (
+              <div className="absolute top-3 left-3">
+                <span className="inline-block bg-[#FFD700] text-[#0f1e42] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-lg">
+                  Article of the Week
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <div className="p-6">
           <div className="mb-3">
-            <span className="inline-block bg-[#FFD700] text-[#0f1e42] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-              Article of the Week
+            <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide ${
+              categoryColors[article.category] || 'bg-gray-100 text-gray-700'
+            }`}>
+              {article.category}
             </span>
           </div>
-        )}
-        
-        <div className="mb-3">
-          <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide ${
-            categoryColors[article.category] || 'bg-gray-100 text-gray-700'
-          }`}>
-            {article.category}
-          </span>
-        </div>
 
-        <h3 className="text-xl font-bold text-[#0f1e42] mb-3 leading-tight">{article.title}</h3>
-        <p className="text-gray-600 text-sm mb-4 leading-relaxed">{article.description}</p>
-        
-        <div className="flex items-center justify-between text-sm">
-          <div className="text-gray-700">
-            <span className="font-medium">{article.author}</span>
-            {article.grade && <span className="text-gray-500"> · {article.grade}</span>}
+          <h3 className="text-xl font-bold text-[#0f1e42] mb-3 leading-tight">{article.title}</h3>
+          <p className="text-gray-600 text-sm mb-4 leading-relaxed">{article.description}</p>
+          
+          <div className="flex items-center justify-between text-sm">
+            <div className="text-gray-700">
+              <span className="font-medium">{article.author}</span>
+              {article.grade && <span className="text-gray-500"> · {article.grade}</span>}
+            </div>
+            <span className="text-gray-500">{article.date}</span>
           </div>
-          <span className="text-gray-500">{article.date}</span>
-        </div>
 
-        {featured && (
-          <button className="mt-4 bg-[#0f1e42] text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#1a2d5a] transition-colors">
-            Read More
-          </button>
-        )}
+          {featured && (
+            <button className="mt-4 bg-[#0f1e42] text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#1a2d5a] transition-colors w-full">
+              Read More
+            </button>
+          )}
+        </div>
       </div>
     </Link>
   );

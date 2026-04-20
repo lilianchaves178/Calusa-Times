@@ -10,7 +10,7 @@ const Footer = () => {
               <span className="text-[#0f1e42] font-bold text-xl">C</span>
             </div>
             <div>
-              <h3 className="font-bold text-lg">The Calusa Canvas</h3>
+              <h3 className="font-bold text-lg">The Calusa Times</h3>
               <p className="text-sm text-gray-300">Calusa Elementary School</p>
             </div>
           </div>

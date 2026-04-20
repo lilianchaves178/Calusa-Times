@@ -7,7 +7,8 @@ export const articles = [
     author: 'Sofia Martinez',
     grade: '5th Grade',
     date: 'Apr 14, 2026',
-    featured: true
+    featured: true,
+    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80'
   },
   {
     id: '2',
@@ -16,7 +17,8 @@ export const articles = [
     description: 'A sneak peek at the amazing student artwork coming to our Spring Art Show on April 21st.',
     author: 'Lucas Chen',
     grade: '4th Grade',
-    date: 'Apr 14, 2026'
+    date: 'Apr 14, 2026',
+    image: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80'
   },
   {
     id: '3',
@@ -25,7 +27,8 @@ export const articles = [
     description: 'A 3rd grader shares why Charlotte\'s Web became the best book she read all year.',
     author: 'Emma Rodriguez',
     grade: '3rd Grade',
-    date: 'Apr 14, 2026'
+    date: 'Apr 14, 2026',
+    image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&q=80'
   },
   {
     id: '4',
@@ -34,7 +37,8 @@ export const articles = [
     description: '5th graders claim victory in the school kickball championship with a dramatic final inning.',
     author: 'Marcus Williams',
     grade: '5th Grade',
-    date: 'Apr 14, 2026'
+    date: 'Apr 14, 2026',
+    image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80'
   },
   {
     id: '5',
@@ -43,7 +47,8 @@ export const articles = [
     description: 'A beautiful poem about butterflies by one of our youngest poets.',
     author: 'Lily Patel',
     grade: '2nd Grade',
-    date: 'Apr 14, 2026'
+    date: 'Apr 14, 2026',
+    image: 'https://images.unsplash.com/photo-1526336024174-e58f5cdd8e13?w=800&q=80'
   },
   {
     id: '6',
@@ -52,7 +57,8 @@ export const articles = [
     description: 'A 4th grader explains what makes volcanoes erupt and shares a fun classroom experiment.',
     author: 'Noah Kim',
     grade: '4th Grade',
-    date: 'Apr 14, 2026'
+    date: 'Apr 14, 2026',
+    image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=800&q=80'
   },
   {
     id: '7',
@@ -61,7 +67,8 @@ export const articles = [
     description: 'A quick poll from the lunch table about dream superpowers.',
     author: 'Aiden Brooks',
     grade: '3rd Grade',
-    date: 'Apr 14, 2026'
+    date: 'Apr 14, 2026',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80'
   }
 ];
 
