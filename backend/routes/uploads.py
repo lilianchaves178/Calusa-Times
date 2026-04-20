@@ -14,3 +14,21 @@ async def serve_article_image(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     
     return FileResponse(file_path)
+
+@router.get("/art/{filename}")
+async def serve_art_image(filename: str):
+    file_path = UPLOADS_DIR / "art" / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(file_path)
+
+@router.get("/sponsors/{filename}")
+async def serve_sponsor_logo(filename: str):
+    file_path = UPLOADS_DIR / "sponsors" / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(file_path)

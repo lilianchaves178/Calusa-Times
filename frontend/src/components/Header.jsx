@@ -9,6 +9,8 @@ const Header = () => {
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/articles', label: 'Articles', icon: Newspaper },
+    { path: '/student-art', label: 'Art Gallery', icon: Users },
+    { path: '/sponsors', label: 'Sponsors', icon: Trophy },
     { path: '/spotlight', label: 'Spotlight', icon: Users },
     { path: '/achievements', label: 'Achievements', icon: Trophy },
     { path: '/school-info', label: 'School Info', icon: Info }

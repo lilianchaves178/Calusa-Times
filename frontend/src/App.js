@@ -9,12 +9,17 @@ import AchievementsPage from "./pages/AchievementsPage";
 import SchoolInfoPage from "./pages/SchoolInfoPage";
 import SubmitStoryPage from "./pages/SubmitStoryPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import StudentArtPage from "./pages/StudentArtPage";
+import SubmitArtPage from "./pages/SubmitArtPage";
+import SponsorsPage from "./pages/SponsorsPage";
+import PopupAnnouncement from "./components/PopupAnnouncement";
 import { Toaster } from "./components/ui/toaster";
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
+        <PopupAnnouncement />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/articles" element={<ArticlesPage />} />
@@ -23,6 +28,9 @@ function App() {
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/school-info" element={<SchoolInfoPage />} />
           <Route path="/submit-story" element={<SubmitStoryPage />} />
+          <Route path="/student-art" element={<StudentArtPage />} />
+          <Route path="/submit-art" element={<SubmitArtPage />} />
+          <Route path="/sponsors" element={<SponsorsPage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
         </Routes>
       </BrowserRouter>
