@@ -14,7 +14,7 @@ const HomePage = () => {
   const latestArticles = articles.filter(a => !a.featured);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gray-50">
       <AnnouncementTicker />
       <Header />
       <NewspaperHeader />
