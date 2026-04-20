@@ -34,11 +34,11 @@ const HomePage = () => {
         </div>
 
         {/* Featured Story + Student Spotlight Row - Cards Aligned */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-          <div className="lg:col-span-2">
-            {featuredArticle && <ArticleCard article={featuredArticle} featured={true} />}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10 items-stretch">
+          <div className="lg:col-span-2 flex">
+            {featuredArticle && <div className="flex-1"><ArticleCard article={featuredArticle} featured={true} /></div>}
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 flex">
             <StudentSpotlight />
           </div>
         </div>

@@ -13,8 +13,8 @@ const categoryColors = {
 
 const ArticleCard = ({ article, featured = false }) => {
   return (
-    <Link to={`/articles/${article.id}`}>
-      <div className={`bg-white rounded-2xl shadow-md overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 ${
+    <Link to={`/articles/${article.id}`} className="block h-full">
+      <div className={`bg-white rounded-2xl shadow-md overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col ${
         featured ? 'ring-4 ring-yellow-400' : ''
       }`}>
         {article.image && (
@@ -34,7 +34,7 @@ const ArticleCard = ({ article, featured = false }) => {
           </div>
         )}
         
-        <div className="p-5">
+        <div className="p-5 flex-1 flex flex-col">
           <div className="mb-3">
             <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide ${
               categoryColors[article.category] || 'bg-gray-500 text-white'
@@ -44,7 +44,7 @@ const ArticleCard = ({ article, featured = false }) => {
           </div>
 
           <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">{article.title}</h3>
-          <p className="text-gray-600 text-sm mb-4 leading-relaxed">{article.description}</p>
+          <p className="text-gray-600 text-sm mb-4 leading-relaxed flex-1">{article.description}</p>
           
           <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100">
             <div className="text-gray-700">
