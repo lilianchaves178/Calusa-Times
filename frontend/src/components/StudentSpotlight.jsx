@@ -5,11 +5,11 @@ import { spotlight } from '../mockData';
 
 const StudentSpotlight = () => {
   return (
-    <div className="bg-[#0f1e42] rounded-2xl p-6 text-white relative overflow-hidden mb-6">
+    <div className="bg-[#0f1e42] rounded-2xl p-6 text-white relative overflow-hidden h-full flex flex-col">
       <div className="absolute top-4 right-4 w-32 h-32 bg-[#1a2d5a] rounded-full opacity-30"></div>
       <div className="absolute bottom-4 left-4 w-24 h-24 bg-[#1a2d5a] rounded-full opacity-30"></div>
       
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         <div className="text-center mb-6">
           <p className="text-[#FFD700] text-sm uppercase tracking-wider font-semibold mb-2">Student</p>
           <p className="text-[#FFD700] text-sm uppercase tracking-wider font-semibold">Spotlight</p>
@@ -29,7 +29,7 @@ const StudentSpotlight = () => {
           </div>
         </div>
 
-        <div className="text-center">
+        <div className="text-center flex-1 flex flex-col justify-center">
           <h3 className="text-2xl font-black mb-1">{spotlight.name}</h3>
           <p className="text-gray-300 text-sm mb-4">{spotlight.grade}</p>
           <blockquote className="italic text-gray-200 text-sm leading-relaxed">

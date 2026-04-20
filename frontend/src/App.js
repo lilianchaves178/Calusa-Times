@@ -7,6 +7,9 @@ import ArticleDetailPage from "./pages/ArticleDetailPage";
 import SpotlightPage from "./pages/SpotlightPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import SchoolInfoPage from "./pages/SchoolInfoPage";
+import SubmitStoryPage from "./pages/SubmitStoryPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import { Toaster } from "./components/ui/toaster";
 
 function App() {
   return (
@@ -19,8 +22,11 @@ function App() {
           <Route path="/spotlight" element={<SpotlightPage />} />
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/school-info" element={<SchoolInfoPage />} />
+          <Route path="/submit-story" element={<SubmitStoryPage />} />
+          <Route path="/admin" element={<AdminLoginPage />} />
         </Routes>
       </BrowserRouter>
+      <Toaster />
     </div>
   );
 }

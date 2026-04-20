@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Newspaper, Users, Trophy, Info, Edit } from 'lucide-react';
+import { Home, Newspaper, Users, Trophy, Info, Edit, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 
 const Header = () => {
@@ -49,10 +49,20 @@ const Header = () => {
             })}
           </nav>
 
-          <Button className="bg-yellow-400 text-blue-900 hover:bg-yellow-500 font-semibold shadow-md">
-            <Edit size={18} className="mr-2" />
-            Submit Story
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link to="/submit-story">
+              <Button className="bg-yellow-400 text-blue-900 hover:bg-yellow-500 font-semibold shadow-md">
+                <Edit size={18} className="mr-2" />
+                Submit Story
+              </Button>
+            </Link>
+            <Link to="/admin">
+              <Button className="bg-blue-900 text-white hover:bg-blue-800 font-semibold shadow-md">
+                <Shield size={18} className="mr-2" />
+                Admin
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </header>

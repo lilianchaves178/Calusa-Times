@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 # Import routes
-from routes import articles, comments, uploads
+from routes import articles, comments, uploads, auth
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -26,11 +26,13 @@ api_router = APIRouter(prefix="/api")
 # Initialize database for route modules
 articles.set_db(db)
 comments.set_db(db)
+auth.set_db(db)
 
 # Include routers
 app.include_router(articles.router)
 app.include_router(comments.router)
 app.include_router(uploads.router)
+app.include_router(auth.router)
 
 # Health check endpoint
 @api_router.get("/")
