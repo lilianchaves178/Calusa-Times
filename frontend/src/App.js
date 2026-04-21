@@ -13,6 +13,7 @@ import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
 import MuralPage from "./pages/MuralPage";
+import PostMessagePage from "./pages/PostMessagePage";
 import PopupAnnouncement from "./components/PopupAnnouncement";
 import { Toaster } from "./components/ui/toaster";
 
@@ -33,6 +34,7 @@ function App() {
           <Route path="/submit-art" element={<SubmitArtPage />} />
           <Route path="/sponsors" element={<SponsorsPage />} />
           <Route path="/mural" element={<MuralPage />} />
+          <Route path="/post-message" element={<PostMessagePage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
         </Routes>
       </BrowserRouter>
