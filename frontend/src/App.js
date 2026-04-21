@@ -11,6 +11,10 @@ import SubmitStoryPage from "./pages/SubmitStoryPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminArticlesPage from "./pages/AdminArticlesPage";
+import AdminCommentsPage from "./pages/AdminCommentsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminArtPage from "./pages/AdminArtPage";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -40,6 +44,10 @@ function App() {
           <Route path="/admin" element={<AdminLoginPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/articles" element={<AdminArticlesPage />} />
+          <Route path="/admin/comments" element={<AdminCommentsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/art" element={<AdminArtPage />} />
+          <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         </Routes>
       </BrowserRouter>
       <Toaster />
