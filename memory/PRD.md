@@ -56,6 +56,7 @@ See `/app/memory/test_credentials.md`.
 - **Subscribers**: `POST /subscribers` (public, idempotent), `POST /subscribers/unsubscribe`. Admin: `GET /subscribers?active_only=true|false`, `DELETE /subscribers/{id}`
 - **Print edition**: `GET /articles/print-edition?month=YYYY-MM` (public) → `{articles: [...with cached ai_summary], achievements: [...]}`
 - **Events**: `GET /events`, `GET /events/upcoming`, `GET /events/calendar.ics` (RFC 5545 feed), `GET /events/{id}.ics`. Admin: `POST /events`, `PUT /events/{id}`, `DELETE /events/{id}`
+- **Parent Resource Pages**: `GET /parent-resource-pages`, `GET /parent-resource-pages/{category}`. Admin: `PUT /parent-resource-pages/{category}`, `POST /parent-resource-pages/{category}/upload-hero`. Six categories: PTA, INFO, CHAT, FORMS, VOLUNTEER, OTHER.
 - **Pexels**: `GET /pexels/search?q=...`, `POST /pexels/import` (body `{url, target}` where target ∈ `articles|spotlight|school|art|sponsors`)
 
 ## Test Coverage

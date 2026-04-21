@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 # Import routes
-from routes import articles, comments, uploads, auth, art, sponsors, popups, mural, content, pexels, contact, subscriptions, events, parent_resources
+from routes import articles, comments, uploads, auth, art, sponsors, popups, mural, content, pexels, contact, subscriptions, events, parent_resources, parent_resource_pages
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -36,6 +36,7 @@ contact.set_db(db)
 subscriptions.set_db(db)
 events.set_db(db)
 parent_resources.set_db(db)
+parent_resource_pages.set_db(db)
 
 # Include routers
 app.include_router(articles.router)
@@ -54,6 +55,7 @@ app.include_router(contact.router)
 app.include_router(subscriptions.router)
 app.include_router(events.router)
 app.include_router(parent_resources.router)
+app.include_router(parent_resource_pages.router)
 
 # Health check endpoint
 @api_router.get("/")

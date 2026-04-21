@@ -31,6 +31,7 @@ import PrintPage from "./pages/PrintPage";
 import EventsPage from "./pages/EventsPage";
 import AdminEventsPage from "./pages/AdminEventsPage";
 import AdminParentResourcesPage from "./pages/AdminParentResourcesPage";
+import ParentResourcePage from "./pages/ParentResourcePage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -66,6 +67,7 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/print" element={<PrintPage />} />
           <Route path="/events" element={<EventsPage />} />
+          <Route path="/parent-resources/:category" element={<ParentResourcePage />} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminLoginPage />} />

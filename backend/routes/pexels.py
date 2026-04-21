@@ -77,7 +77,7 @@ async def import_pexels_image(payload: ImportImageRequest):
     Accepts any HTTPS URL (not just Pexels) so the same endpoint can
     be reused later. Restricted to a known set of target directories.
     """
-    if payload.target not in {"articles", "spotlight", "school", "art", "sponsors", "achievements"}:
+    if payload.target not in {"articles", "spotlight", "school", "art", "sponsors", "achievements", "parent-resources"}:
         raise HTTPException(status_code=400, detail="Invalid target directory")
     if not payload.url.startswith("https://"):
         raise HTTPException(status_code=400, detail="URL must be HTTPS")
