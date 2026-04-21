@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from routes.auth import require_permission
 from datetime import datetime
 import uuid
 
@@ -58,20 +59,20 @@ async def get_active_popups():
 
 
 @router.get("/all", response_model=List[Popup])
-async def get_all_popups():
+async def get_all_popups(_=Depends(require_permission("edit"))):
     popups = await db.popups.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     return [Popup(**p) for p in popups]
 
 
 @router.post("", response_model=Popup)
-async def create_popup(popup: PopupCreate):
+async def create_popup(popup: PopupCreate, _=Depends(require_permission("edit"))):
     obj = Popup(**popup.dict())
     await db.popups.insert_one(obj.dict())
     return obj
 
 
 @router.put("/{popup_id}", response_model=Popup)
-async def update_popup(popup_id: str, update: PopupUpdate):
+async def update_popup(popup_id: str, update: PopupUpdate, _=Depends(require_permission("edit"))):
     existing = await db.popups.find_one({"id": popup_id})
     if not existing:
         raise HTTPException(status_code=404, detail="Popup not found")
@@ -85,7 +86,7 @@ async def update_popup(popup_id: str, update: PopupUpdate):
 
 
 @router.put("/{popup_id}/deactivate")
-async def deactivate_popup(popup_id: str):
+async def deactivate_popup(popup_id: str, _=Depends(require_permission("edit"))):
     result = await db.popups.update_one(
         {"id": popup_id},
         {"$set": {"is_active": False}},
@@ -96,7 +97,7 @@ async def deactivate_popup(popup_id: str):
 
 
 @router.delete("/{popup_id}")
-async def delete_popup(popup_id: str):
+async def delete_popup(popup_id: str, _=Depends(require_permission("delete"))):
     result = await db.popups.delete_one({"id": popup_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Popup not found")

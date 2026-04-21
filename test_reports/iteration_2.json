@@ -1,0 +1,44 @@
+{
+  "summary": "Re-ran backend test suite (iteration 2) after E1's fixes: admin guards on mutating routes via Depends(require_permission(...)), _id projection fix on analytics, JWT_SECRET_KEY now in backend/.env. Updated /app/backend/tests/backend_test.py to attach the admin Bearer token on all admin-guarded endpoints and added negative-auth assertions (no-token -> 401/403, viewer-token -> 403) on every admin endpoint. Added regression for the analytics 500 bug. Result: 34/34 pass (100%).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/auth/register",
+        "issue": "Still a public, unauthenticated bootstrap endpoint — anyone can register with role=editor/admin (per spec this is intentional for admin bootstrap, but should be locked down to manage_users permission or restricted to role='viewer' before production)."
+      },
+      {
+        "endpoint": "GET /api/auth/me (missing header)",
+        "issue": "FastAPI HTTPBearer returns 403 when no Authorization header is present (spec says 'invalid/missing token returns 401'). Cosmetic; semantics are preserved."
+      },
+      {
+        "endpoint": "All admin-guarded routes (missing header)",
+        "issue": "Same HTTPBearer behaviour — returns 403 (not 401) when Authorization header is absent; returns 401 only when token is present but invalid/expired. Tests accept both (401, 403)."
+      }
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: decide on gating POST /api/auth/register behind manage_users permission (or force role='viewer' for public registrations) before production launch.",
+    "Optional cosmetic: override HTTPBearer dependency to return 401 (instead of 403) when Authorization header is absent, so error codes match the spec exactly."
+  ],
+  "critical_code_review_comments": [
+    "Admin guards via Depends(require_permission(...)) correctly applied across articles/comments/sponsors/art/popups/mural — verified by 34 green tests including negative-auth cases.",
+    "Analytics endpoint now excludes _id on recent_activity (regression locked in by TestArticles::test_click_public_and_analytics_admin which asserts no _id in any nested dict).",
+    "JWT_SECRET_KEY now set in /app/backend/.env; login & token-verify flow stable.",
+    "Public flows intact: GET /api/articles, GET /api/articles/{id}, POST /api/articles, POST /api/articles/{id}/click, POST /api/comments, GET /api/comments/{article_id}, GET /api/sponsors, GET /api/art, POST /api/art, POST /api/art/{id}/upload-image, GET /api/popups, GET /api/mural, POST /api/mural, GET /api/mural/config/pricing — all work without a token.",
+    "bcrypt 4.x/passlib compatibility warning ('AttributeError: module bcrypt has no attribute __about__') surfaces in create_admin.py output but is non-fatal (passlib still hashes the password). Consider pinning passlib>=1.7.5 or bcrypt<4 to silence."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (34/34)", "frontend": "not tested"},
+  "test_credentials": "admin@calusaschool.org / Calusa2024! (seeded via python /app/backend/create_admin.py; idempotent). Tests auto-register a TEST_viewer_* viewer-role account via POST /api/auth/register each session for 403 checks.",
+  "seed_data_creation": "All TEST_-prefixed resources (users, articles, comments, sponsors, art, popups, mural messages) are created and torn down within each test class. No permanent pollution aside from UUID-named image files under /app/uploads/* (harmless).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: pytest /app/backend/tests/backend_test.py -v. Suite is the canonical regression for: admin guards on PUT/DELETE/approve/reject/upload/analytics/pending across all routers, _id leak prevention, and Givebacks mural tier pricing. Fixture `viewer_user` provides a session-scoped viewer JWT for 403 negative tests; fixture `auth_headers` provides admin bearer. BASE_URL comes from REACT_APP_BACKEND_URL in /app/frontend/.env.",
+  "rca of the issue": "No open bugs this iteration. Previous analytics 500 (ObjectId not iterable) is fixed — verified by explicit assertion that each entry of data['recent_activity'] contains no '_id'. Previous lack of admin guards is fixed — verified by 15 new negative-auth assertions (no-token + viewer-token) across articles/comments/sponsors/art/popups/mural."
+}

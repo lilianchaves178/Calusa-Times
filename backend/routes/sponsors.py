@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from routes.auth import require_permission
 from datetime import datetime
 import uuid
 import shutil
@@ -58,14 +59,14 @@ async def get_sponsors(active_only: bool = True):
 
 
 @router.post("", response_model=Sponsor)
-async def create_sponsor(sponsor: SponsorCreate):
+async def create_sponsor(sponsor: SponsorCreate, _=Depends(require_permission("edit"))):
     obj = Sponsor(**sponsor.dict())
     await db.sponsors.insert_one(obj.dict())
     return obj
 
 
 @router.put("/{sponsor_id}", response_model=Sponsor)
-async def update_sponsor(sponsor_id: str, update: SponsorUpdate):
+async def update_sponsor(sponsor_id: str, update: SponsorUpdate, _=Depends(require_permission("edit"))):
     existing = await db.sponsors.find_one({"id": sponsor_id})
     if not existing:
         raise HTTPException(status_code=404, detail="Sponsor not found")
@@ -79,7 +80,7 @@ async def update_sponsor(sponsor_id: str, update: SponsorUpdate):
 
 
 @router.post("/{sponsor_id}/upload-logo")
-async def upload_sponsor_logo(sponsor_id: str, file: UploadFile = File(...)):
+async def upload_sponsor_logo(sponsor_id: str, file: UploadFile = File(...), _=Depends(require_permission("edit"))):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
@@ -100,7 +101,7 @@ async def upload_sponsor_logo(sponsor_id: str, file: UploadFile = File(...)):
 
 
 @router.delete("/{sponsor_id}")
-async def delete_sponsor(sponsor_id: str):
+async def delete_sponsor(sponsor_id: str, _=Depends(require_permission("delete"))):
     result = await db.sponsors.delete_one({"id": sponsor_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Sponsor not found")

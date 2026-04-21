@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from routes.auth import require_permission
 from datetime import datetime
 import uuid
 import random
@@ -62,7 +63,7 @@ async def get_mural_messages(approved_only: bool = True):
 
 
 @router.get("/pending", response_model=List[MuralMessage])
-async def get_pending_mural_messages():
+async def get_pending_mural_messages(_=Depends(require_permission("edit"))):
     """Admin view: all messages waiting for payment verification/approval."""
     messages = await db.mural_messages.find({"approved": False}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return [MuralMessage(**m) for m in messages]
@@ -94,7 +95,7 @@ async def create_mural_message(payload: MuralMessageCreate):
 
 
 @router.put("/{message_id}/approve", response_model=MuralMessage)
-async def approve_mural_message(message_id: str):
+async def approve_mural_message(message_id: str, _=Depends(require_permission("edit"))):
     """Admin: mark message as paid + approved so it shows on the cork board."""
     result = await db.mural_messages.update_one(
         {"id": message_id},
@@ -108,7 +109,7 @@ async def approve_mural_message(message_id: str):
 
 
 @router.put("/{message_id}/reject")
-async def reject_mural_message(message_id: str):
+async def reject_mural_message(message_id: str, _=Depends(require_permission("edit"))):
     result = await db.mural_messages.update_one(
         {"id": message_id},
         {"$set": {"approved": False, "paid": False}},
@@ -119,7 +120,7 @@ async def reject_mural_message(message_id: str):
 
 
 @router.delete("/{message_id}")
-async def delete_mural_message(message_id: str):
+async def delete_mural_message(message_id: str, _=Depends(require_permission("delete"))):
     result = await db.mural_messages.delete_one({"id": message_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Message not found")

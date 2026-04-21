@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Request
+from fastapi import APIRouter, HTTPException, UploadFile, File, Request, Depends
 from typing import List, Optional
 from models import Article, ArticleCreate, ArticleUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
+from routes.auth import require_permission
 import os
 import uuid
 from datetime import datetime
@@ -29,12 +30,12 @@ async def get_articles(featured: Optional[bool] = None, category: Optional[str] 
     if category:
         query["category"] = category
     
-    articles = await db.articles.find(query).sort("date", -1).to_list(100)
+    articles = await db.articles.find(query, {"_id": 0}).sort("date", -1).to_list(100)
     return [Article(**article) for article in articles]
 
 @router.get("/{article_id}", response_model=Article)
 async def get_article(article_id: str, request: Request):
-    article = await db.articles.find_one({"id": article_id})
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0})
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     
@@ -62,7 +63,7 @@ async def create_article(article: ArticleCreate):
     return article_obj
 
 @router.put("/{article_id}", response_model=Article)
-async def update_article(article_id: str, article_update: ArticleUpdate):
+async def update_article(article_id: str, article_update: ArticleUpdate, _=Depends(require_permission("edit"))):
     article = await db.articles.find_one({"id": article_id})
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
@@ -75,11 +76,11 @@ async def update_article(article_id: str, article_update: ArticleUpdate):
         {"$set": update_data}
     )
     
-    updated_article = await db.articles.find_one({"id": article_id})
+    updated_article = await db.articles.find_one({"id": article_id}, {"_id": 0})
     return Article(**updated_article)
 
 @router.delete("/{article_id}")
-async def delete_article(article_id: str):
+async def delete_article(article_id: str, _=Depends(require_permission("delete"))):
     result = await db.articles.delete_one({"id": article_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Article not found")
@@ -90,7 +91,7 @@ async def delete_article(article_id: str):
     return {"message": "Article deleted successfully"}
 
 @router.post("/upload-image")
-async def upload_image_standalone(file: UploadFile = File(...)):
+async def upload_image_standalone(file: UploadFile = File(...), _=Depends(require_permission("upload"))):
     """Upload an image and get back a URL. Useful for new article creation flow."""
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
@@ -106,7 +107,7 @@ async def upload_image_standalone(file: UploadFile = File(...)):
 
 
 @router.post("/{article_id}/upload-image")
-async def upload_article_image(article_id: str, file: UploadFile = File(...)):
+async def upload_article_image(article_id: str, file: UploadFile = File(...), _=Depends(require_permission("upload"))):
     # Validate file type
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
@@ -148,8 +149,8 @@ async def track_click(article_id: str, request: Request):
     return {"message": "Click tracked"}
 
 @router.get("/{article_id}/analytics")
-async def get_article_analytics(article_id: str):
-    article = await db.articles.find_one({"id": article_id})
+async def get_article_analytics(article_id: str, _=Depends(require_permission("edit"))):
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0})
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     
@@ -157,8 +158,8 @@ async def get_article_analytics(article_id: str):
     views = article.get("views", 0)
     clicks = article.get("clicks", 0)
     
-    # Get detailed analytics
-    analytics = await db.analytics.find({"article_id": article_id}).to_list(1000)
+    # Get detailed analytics (exclude Mongo _id)
+    analytics = await db.analytics.find({"article_id": article_id}, {"_id": 0}).to_list(1000)
     
     return {
         "article_id": article_id,

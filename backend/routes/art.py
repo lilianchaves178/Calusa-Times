@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from routes.auth import require_permission
 from datetime import datetime
 import uuid
 import shutil
@@ -52,7 +53,7 @@ async def get_art_submissions(approved_only: bool = True, featured: Optional[boo
 
 
 @router.get("/pending", response_model=List[ArtSubmission])
-async def get_pending_art():
+async def get_pending_art(_=Depends(require_permission("edit"))):
     art_list = await db.art_submissions.find({"approved": False}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return [ArtSubmission(**a) for a in art_list]
 
@@ -86,7 +87,7 @@ async def upload_art_image(art_id: str, file: UploadFile = File(...)):
 
 
 @router.put("/{art_id}/approve")
-async def approve_art(art_id: str):
+async def approve_art(art_id: str, _=Depends(require_permission("edit"))):
     result = await db.art_submissions.update_one(
         {"id": art_id},
         {"$set": {"approved": True}},
@@ -97,7 +98,7 @@ async def approve_art(art_id: str):
 
 
 @router.put("/{art_id}/feature")
-async def toggle_feature_art(art_id: str):
+async def toggle_feature_art(art_id: str, _=Depends(require_permission("edit"))):
     existing = await db.art_submissions.find_one({"id": art_id})
     if not existing:
         raise HTTPException(status_code=404, detail="Art submission not found")
@@ -107,7 +108,7 @@ async def toggle_feature_art(art_id: str):
 
 
 @router.delete("/{art_id}")
-async def delete_art(art_id: str):
+async def delete_art(art_id: str, _=Depends(require_permission("delete"))):
     result = await db.art_submissions.delete_one({"id": art_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Art submission not found")
