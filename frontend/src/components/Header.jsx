@@ -22,9 +22,12 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-6 py-3">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center shadow-md">
-              <span className="text-yellow-300 font-bold text-lg">C</span>
-            </div>
+            <img
+              src="/branding/calusa-logo.jpg"
+              alt="Calusa Elementary — A Step Ahead"
+              className="w-12 h-12 rounded-full object-cover shadow-md ring-1 ring-gray-200"
+              data-testid="header-calusa-logo"
+            />
             <div>
               <h1 className="text-blue-800 font-bold text-lg">The Calusa Times</h1>
               <p className="text-[10px] text-gray-600">Student Newspaper</p>
