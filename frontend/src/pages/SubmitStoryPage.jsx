@@ -7,7 +7,8 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Card } from '../components/ui/card';
 import { useToast } from '../hooks/use-toast';
-import api from '../lib/api';
+import api, { assetUrl } from '../lib/api';
+import PexelsImagePicker from '../components/PexelsImagePicker';
 
 const categories = ['news', 'arts', 'opinion', 'sports', 'poetry', 'science', 'quick thought'];
 
@@ -23,6 +24,7 @@ const SubmitStoryPage = () => {
     grade: '',
   });
   const [image, setImage] = useState(null);
+  const [stockImageUrl, setStockImageUrl] = useState(''); // Pexels image URL (already on our server)
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -30,7 +32,7 @@ const SubmitStoryPage = () => {
     setLoading(true);
 
     try {
-      let image_url = '';
+      let image_url = stockImageUrl || '';
       if (image) {
         const fd = new FormData();
         fd.append('file', image);
@@ -143,13 +145,44 @@ const SubmitStoryPage = () => {
 
             <div>
               <label className="block text-sm font-semibold mb-2">Story Image (Optional)</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImage(e.target.files[0])}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                data-testid="submit-image-input"
-              />
+              {stockImageUrl && (
+                <div className="mb-3 relative inline-block">
+                  <img
+                    src={assetUrl(stockImageUrl)}
+                    alt="Stock preview"
+                    className="max-h-40 rounded-lg border"
+                    data-testid="submit-story-stock-preview"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setStockImageUrl('')}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-xs font-bold"
+                    aria-label="Remove stock image"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImage(e.target.files[0])}
+                  className="px-4 py-2 border border-gray-300 rounded-lg"
+                  data-testid="submit-image-input"
+                />
+                <span className="text-xs text-gray-500">or</span>
+                <PexelsImagePicker
+                  target="articles"
+                  onImported={(url) => {
+                    setImage(null);
+                    setStockImageUrl(url);
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Upload your own picture, or browse free stock photos from Pexels.
+              </p>
             </div>
 
             <div className="flex gap-4">

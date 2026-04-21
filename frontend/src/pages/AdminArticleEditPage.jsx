@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { useToast } from '../hooks/use-toast';
 import api, { assetUrl } from '../lib/api';
+import PexelsImagePicker from '../components/PexelsImagePicker';
 
 const CATEGORIES = ['news', 'arts', 'opinion', 'sports', 'poetry', 'science', 'quick thought'];
 

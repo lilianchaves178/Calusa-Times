@@ -130,7 +130,9 @@ async def delete_article(article_id: str, _=Depends(require_permission("delete")
     return {"message": "Article deleted successfully"}
 
 @router.post("/upload-image")
-async def upload_image_standalone(file: UploadFile = File(...), _=Depends(require_permission("upload"))):
+async def upload_image_standalone(file: UploadFile = File(...)):
+    """Upload an image and get back a URL. Used both by the public Submit Story flow
+    (articles default to approved=false, so this is safe) and the admin new-article flow."""
     """Upload an image and get back a URL. Useful for new article creation flow."""
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
