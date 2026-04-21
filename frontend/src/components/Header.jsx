@@ -12,15 +12,18 @@ import {
   Sparkles,
   MessageSquare,
   Mail,
+  CalendarDays,
   Menu,
   X,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import AnnouncementTicker from './AnnouncementTicker';
 
 const navItems = [
   { path: '/', label: 'Home', icon: Home },
   { path: '/articles', label: 'Articles', icon: Newspaper },
+  { path: '/events', label: 'Events', icon: CalendarDays },
   { path: '/mural', label: 'Mural', icon: MessageSquare },
   { path: '/student-art', label: 'Student Gallery', icon: Palette },
   { path: '/sponsors', label: 'Sponsors', icon: Sparkles },
@@ -35,7 +38,9 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <>
+      <AnnouncementTicker />
+      <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between gap-3">
           {/* Logo + wordmark */}
@@ -164,6 +169,7 @@ const Header = () => {
         </div>
       </div>
     </header>
+    </>
   );
 };
 

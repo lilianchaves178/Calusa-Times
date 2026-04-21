@@ -55,6 +55,7 @@ See `/app/memory/test_credentials.md`.
 - **Contact**: `POST /contact` (public). Admin: `GET /contact?resolved=true|false`, `PUT /contact/{id}/resolve?resolved=bool`, `DELETE /contact/{id}`
 - **Subscribers**: `POST /subscribers` (public, idempotent), `POST /subscribers/unsubscribe`. Admin: `GET /subscribers?active_only=true|false`, `DELETE /subscribers/{id}`
 - **Print edition**: `GET /articles/print-edition?month=YYYY-MM` (public) → `{articles: [...with cached ai_summary], achievements: [...]}`
+- **Events**: `GET /events`, `GET /events/upcoming`, `GET /events/calendar.ics` (RFC 5545 feed), `GET /events/{id}.ics`. Admin: `POST /events`, `PUT /events/{id}`, `DELETE /events/{id}`
 - **Pexels**: `GET /pexels/search?q=...`, `POST /pexels/import` (body `{url, target}` where target ∈ `articles|spotlight|school|art|sponsors`)
 
 ## Test Coverage
@@ -112,6 +113,13 @@ See `/app/memory/test_credentials.md`.
   - \>3 articles → two sheets, achievements land on whichever page has room.
 - 📬 **Email subscriptions** — new `backend/routes/subscriptions.py` (`Subscriber` model, idempotent `POST /api/subscribers`, `POST /api/subscribers/unsubscribe`, admin list/delete) + Resend welcome email. Footer now has a pill-style email capture "Remind me when the new issue is out" with inline success state.
 - Files: `backend/services/summarizer.py`, `backend/routes/subscriptions.py`, `backend/models.py` (ai_summary), `backend/routes/articles.py` (print-edition), `backend/server.py` (wire), `frontend/src/components/PrintableNewspaper.jsx` (rewrite for adaptive layout + AI summary body), `frontend/src/pages/AdminPrintPage.css` (smaller floated thumbs), `frontend/src/pages/PrintPage.jsx` + `AdminPrintPage.jsx` (call `/print-edition`), `frontend/src/components/Footer.jsx` (subscribe form).
+
+### Iteration 15 (Feb 23, 2026)
+- 📅 **Events calendar**: new `backend/routes/events.py` (Event model — title / description / location / category / start / end / all_day / is_active, 9 categories). Admin CRUD; public list + upcoming; **RFC 5545 ICS feed** at `/api/events/calendar.ics` (full-calendar subscription) and per-event `/api/events/{id}.ics` (single download).
+- 🎨 **Pretty public calendar** at `/events` — hero with 4 sync buttons (Apple Calendar via `webcal://`, Google Calendar via `cid=` URL, Copy Link, Download .ics), classic 7-col month grid with color-coded event pills and today highlighted in gold, right sidebar "Coming up" list, click-to-open event modal with per-event "Add to my calendar" download.
+- 📢 **Rotating ticker brought back** — `AnnouncementTicker` rewritten to pull live from `/api/events/upcoming`, with seamless CSS-only left-scroll loop (55s), pause-on-hover, respects `prefers-reduced-motion`. Embedded inside `Header.jsx` so it appears on every public page (not on admin).
+- 🛠 **Admin Events page** at `/admin/events` with full CRUD, category select, all-day toggle, and per-event show/hide. New dashboard tile.
+- Files: `backend/routes/events.py`, `frontend/src/pages/EventsPage.jsx`, `AdminEventsPage.jsx`, `components/AnnouncementTicker.jsx` + `AnnouncementTicker.css` (rewrite), `Header.jsx` (ticker + "Events" nav), `App.js` (routes), `AdminDashboard.jsx` (tile).
 
 ## Backlog
 ### P1

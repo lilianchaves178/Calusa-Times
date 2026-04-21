@@ -16,6 +16,7 @@ import {
   Star,
   Mail,
   Printer,
+  CalendarDays,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -192,6 +193,15 @@ const AdminDashboard = () => {
       link: '/admin/contact',
       count: `${counts.openContact} open`,
       testId: 'section-contact',
+    },
+    {
+      title: 'Events Calendar',
+      icon: CalendarDays,
+      description: 'Schedule events for the calendar + ticker',
+      color: 'bg-violet-600',
+      link: '/admin/events',
+      count: 'Manage',
+      testId: 'section-events',
     },
     {
       title: 'Printable Edition',

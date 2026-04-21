@@ -1,0 +1,23 @@
+/* Seamless left-scrolling ticker. The inner track holds 2 copies of the
+   event list so when the first copy finishes scrolling off-screen the
+   second copy picks up without a visible reset. */
+
+@keyframes announcement-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.announcement-track {
+  animation: announcement-scroll 55s linear infinite;
+  will-change: transform;
+}
+
+.announcement-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-track {
+    animation: none;
+  }
+}

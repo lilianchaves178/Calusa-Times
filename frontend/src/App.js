@@ -28,6 +28,8 @@ import AdminContactPage from "./pages/AdminContactPage";
 import AdminPrintPage from "./pages/AdminPrintPage";
 import ContactPage from "./pages/ContactPage";
 import PrintPage from "./pages/PrintPage";
+import EventsPage from "./pages/EventsPage";
+import AdminEventsPage from "./pages/AdminEventsPage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -62,6 +64,7 @@ function App() {
           <Route path="/post-message" element={<PostMessagePage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/print" element={<PrintPage />} />
+          <Route path="/events" element={<EventsPage />} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminLoginPage />} />
@@ -95,6 +98,7 @@ function App() {
           <Route path="/admin/school-info" element={<Protected permission="edit"><AdminSchoolInfoPage /></Protected>} />
           <Route path="/admin/contact" element={<Protected permission="edit"><AdminContactPage /></Protected>} />
           <Route path="/admin/print" element={<Protected permission="edit"><AdminPrintPage /></Protected>} />
+          <Route path="/admin/events" element={<Protected permission="edit"><AdminEventsPage /></Protected>} />
         </Routes>
       </BrowserRouter>
       <Toaster />
