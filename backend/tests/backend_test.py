@@ -730,6 +730,8 @@ class TestMural:
         data = r.json()
         assert data["tiers"] == {"plain": 3, "featured": 5}
         assert "givebacks" in data["givebacks_url"]
+        # Iteration 5: display_days must be exposed
+        assert data.get("display_days") == 30
 
     def test_mural_flow_with_admin_guards(self, session, auth_headers, viewer_user):
         # Public POST (plain tier)
@@ -794,6 +796,158 @@ class TestMural:
         assert r.json()["tier"] == "plain"
         assert r.json()["price"] == 3
         session.delete(f"{API}/mural/{r.json()['id']}", headers=auth_headers)
+
+
+# ---------------------------------------------------------------------------
+# Iteration 5: Mural 30-day auto-expiry from approval time
+# ---------------------------------------------------------------------------
+from datetime import datetime, timedelta
+from pymongo import MongoClient
+
+
+class TestMuralExpiry:
+    @pytest.fixture(scope="class")
+    def mongo_db(self):
+        client = MongoClient(os.environ["MONGO_URL"])
+        db = client[os.environ["DB_NAME"]]
+        yield db
+        client.close()
+
+    def _create_msg(self, label="exp"):
+        r = requests.post(f"{API}/mural", json={
+            "message": f"TEST_{label}_{uuid.uuid4().hex[:6]}",
+            "author_name": "Parent Exp",
+            "tier": "plain",
+        })
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    def test_create_pending_has_null_expires_at(self, session, auth_headers):
+        body = self._create_msg("pendingnull")
+        assert body["approved"] is False
+        assert body["paid"] is False
+        assert body.get("expires_at") in (None, ""), f"expected expires_at None, got {body.get('expires_at')}"
+        session.delete(f"{API}/mural/{body['id']}", headers=auth_headers)
+
+    def test_approve_sets_expires_at_30_days(self, session, auth_headers):
+        body = self._create_msg("approve30")
+        mid = body["id"]
+        before = datetime.utcnow()
+        ap = session.put(f"{API}/mural/{mid}/approve", headers=auth_headers)
+        assert ap.status_code == 200
+        data = ap.json()
+        assert data["approved"] is True and data["paid"] is True
+        assert data["expires_at"] is not None
+        # Parse ISO and compute delta
+        exp = datetime.fromisoformat(data["expires_at"].replace("Z", ""))
+        delta_days = (exp - before).total_seconds() / 86400
+        assert 29.5 <= delta_days <= 30.1, f"expected ~30 days, got {delta_days}"
+
+        # Public list includes the approved message
+        public = requests.get(f"{API}/mural").json()
+        _assert_no_objectid(public)
+        assert any(m["id"] == mid for m in public)
+
+        # Admin include_expired=true also includes it
+        all_admin = requests.get(f"{API}/mural", params={"include_expired": "true"}).json()
+        assert any(m["id"] == mid for m in all_admin)
+
+        session.delete(f"{API}/mural/{mid}", headers=auth_headers)
+
+    def test_expired_excluded_from_public_included_with_flag(self, session, auth_headers, mongo_db):
+        body = self._create_msg("expired")
+        mid = body["id"]
+        # approve to make it visible
+        ap = session.put(f"{API}/mural/{mid}/approve", headers=auth_headers)
+        assert ap.status_code == 200
+
+        # Backdate expires_at directly via pymongo
+        past = datetime.utcnow() - timedelta(days=1)
+        res = mongo_db.mural_messages.update_one({"id": mid}, {"$set": {"expires_at": past}})
+        assert res.matched_count == 1
+
+        public = requests.get(f"{API}/mural").json()
+        assert not any(m["id"] == mid for m in public), "expired message leaked into public list"
+
+        admin_all = requests.get(f"{API}/mural", params={"include_expired": "true"}).json()
+        assert any(m["id"] == mid for m in admin_all), "expired message missing from include_expired view"
+
+        session.delete(f"{API}/mural/{mid}", headers=auth_headers)
+
+    def test_extend_admin_only_and_resets_expiry(self, session, auth_headers, viewer_user, mongo_db):
+        body = self._create_msg("extend")
+        mid = body["id"]
+        session.put(f"{API}/mural/{mid}/approve", headers=auth_headers)
+
+        # Unauth -> 401/403
+        r_no = requests.put(f"{API}/mural/{mid}/extend", params={"days": 30})
+        assert r_no.status_code in (401, 403)
+        # Viewer -> 403
+        r_v = requests.put(f"{API}/mural/{mid}/extend", params={"days": 30}, headers=viewer_user["headers"])
+        assert r_v.status_code == 403
+
+        # Admin extend by 30 days
+        before = datetime.utcnow()
+        r30 = session.put(f"{API}/mural/{mid}/extend", params={"days": 30}, headers=auth_headers)
+        assert r30.status_code == 200
+        exp30 = datetime.fromisoformat(r30.json()["expires_at"].replace("Z", ""))
+        d30 = (exp30 - before).total_seconds() / 86400
+        assert 29.5 <= d30 <= 30.1, f"extend 30 -> got {d30} days"
+
+        # Extend by 60 days
+        before60 = datetime.utcnow()
+        r60 = session.put(f"{API}/mural/{mid}/extend", params={"days": 60}, headers=auth_headers)
+        assert r60.status_code == 200
+        exp60 = datetime.fromisoformat(r60.json()["expires_at"].replace("Z", ""))
+        d60 = (exp60 - before60).total_seconds() / 86400
+        assert 59.5 <= d60 <= 60.1, f"extend 60 -> got {d60} days"
+
+        # days<=0 should clamp to at least 1 day
+        before0 = datetime.utcnow()
+        r0 = session.put(f"{API}/mural/{mid}/extend", params={"days": 0}, headers=auth_headers)
+        assert r0.status_code == 200
+        exp0 = datetime.fromisoformat(r0.json()["expires_at"].replace("Z", ""))
+        d0 = (exp0 - before0).total_seconds() / 86400
+        assert 0.9 <= d0 <= 1.1, f"extend 0 should clamp to ~1 day, got {d0}"
+
+        # negative also clamps to at least 1 day
+        before_neg = datetime.utcnow()
+        rn = session.put(f"{API}/mural/{mid}/extend", params={"days": -5}, headers=auth_headers)
+        assert rn.status_code == 200
+        expn = datetime.fromisoformat(rn.json()["expires_at"].replace("Z", ""))
+        dn = (expn - before_neg).total_seconds() / 86400
+        assert 0.9 <= dn <= 1.1, f"extend -5 should clamp to ~1 day, got {dn}"
+
+        # Extend resurrects an expired message into public view
+        past = datetime.utcnow() - timedelta(days=2)
+        mongo_db.mural_messages.update_one({"id": mid}, {"$set": {"expires_at": past}})
+        assert not any(m["id"] == mid for m in requests.get(f"{API}/mural").json())
+        session.put(f"{API}/mural/{mid}/extend", params={"days": 30}, headers=auth_headers)
+        assert any(m["id"] == mid for m in requests.get(f"{API}/mural").json())
+
+        session.delete(f"{API}/mural/{mid}", headers=auth_headers)
+
+    def test_extend_nonexistent_returns_404(self, session, auth_headers):
+        r = session.put(f"{API}/mural/does-not-exist-{uuid.uuid4().hex[:6]}/extend",
+                        params={"days": 30}, headers=auth_headers)
+        assert r.status_code == 404
+
+    def test_no_objectid_in_any_mural_response(self, session, auth_headers):
+        body = self._create_msg("oidcheck")
+        mid = body["id"]
+        _assert_no_objectid(body)
+
+        ap = session.put(f"{API}/mural/{mid}/approve", headers=auth_headers).json()
+        _assert_no_objectid(ap)
+
+        ext = session.put(f"{API}/mural/{mid}/extend", params={"days": 15}, headers=auth_headers).json()
+        _assert_no_objectid(ext)
+
+        _assert_no_objectid(requests.get(f"{API}/mural").json())
+        _assert_no_objectid(requests.get(f"{API}/mural", params={"include_expired": "true"}).json())
+        _assert_no_objectid(session.get(f"{API}/mural/pending", headers=auth_headers).json())
+
+        session.delete(f"{API}/mural/{mid}", headers=auth_headers)
 
 
 # ---------------------------------------------------------------------------

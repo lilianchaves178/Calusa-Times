@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 5 mural 30-day auto-expiry: extended backend_test.py with TestMuralExpiry (6 new cases) and updated TestMural pricing assertion for display_days=30. Full regression suite of 55 tests passes (100%). All review_request bullets verified end-to-end against REACT_APP_BACKEND_URL.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results_iter5.xml",
+    "/app/test_reports/pytest/pytest_results_iter5_mural.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/mural.py /extend endpoint correctly clamps days via max(1, days) so days<=0 still produces ~1-day expiry (verified for days=0 and days=-5).",
+    "approve and extend both return the freshly fetched document with {_id:0} projection -> no ObjectId leaks (verified across all mural responses).",
+    "GET /api/mural default include_expired=false properly excludes expired (expires_at < now) AND null-expires_at messages are kept visible via the $or {expires_at: None}/{expires_at: {$gt: now}} clause.",
+    "Minor consideration (not a bug): /extend silently allows extending a non-approved (paid=false, approved=false) message - it sets expires_at on a message that won't show publicly anyway. Consider gating /extend on approved=true or document the intent.",
+    "Minor: MURAL_DISPLAY_DAYS default on /extend (days=MURAL_DISPLAY_DAYS=30) makes PUT /api/mural/{id}/extend without query param a 30-day reset - good UX, just worth surfacing in API docs."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {
+    "backend": "100% (55/55)",
+    "frontend": "not tested (backend-only request)"
+  },
+  "test_credentials": "admin@calusaschool.org / Calusa2024! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Tests create TEST_-prefixed mural messages and clean up via DELETE /api/mural/{id} after each case. Backdating done via direct pymongo update on db.mural_messages.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "TestMuralExpiry uses pymongo (sync) with MONGO_URL+DB_NAME from backend/.env to backdate expires_at. All approval/extend timing checks tolerate 0.5s skew (29.5-30.1 days, 0.9-1.1 days, etc.). If you add new mural endpoints, extend TestMuralExpiry and keep the _assert_no_objectid sweep at the end.",
+  "rca of the issue": "N/A - no defects found. Iteration 5 implementation matches spec: pending creation -> expires_at=null; approve -> expires_at=now+30d; public list filters expired; include_expired=true returns all; /extend admin-guarded with day clamping >=1; pricing config exposes display_days=30; no ObjectId leaks anywhere in mural responses."
+}

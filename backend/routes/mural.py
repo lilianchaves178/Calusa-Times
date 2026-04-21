@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from routes.auth import require_permission
 from services import email_service
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import random
 
@@ -18,6 +18,7 @@ def set_db(database):
 # Givebacks payment configuration
 GIVEBACKS_URL = "https://www.givebacks.com/causes/calusa/shop/items/50684"
 TIER_PRICES = {"plain": 3, "featured": 5}
+MURAL_DISPLAY_DAYS = 30
 
 
 class MuralMessage(BaseModel):
@@ -47,17 +48,18 @@ class MuralMessageCreate(BaseModel):
 
 
 @router.get("", response_model=List[MuralMessage])
-async def get_mural_messages(approved_only: bool = True):
+async def get_mural_messages(approved_only: bool = True, include_expired: bool = False):
     query = {}
     if approved_only:
         query["approved"] = True
         query["paid"] = True
 
-    now = datetime.utcnow()
-    query["$or"] = [
-        {"expires_at": None},
-        {"expires_at": {"$gt": now}},
-    ]
+    if not include_expired:
+        now = datetime.utcnow()
+        query["$or"] = [
+            {"expires_at": None},
+            {"expires_at": {"$gt": now}},
+        ]
 
     messages = await db.mural_messages.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
     return [MuralMessage(**m) for m in messages]
@@ -98,14 +100,39 @@ async def create_mural_message(payload: MuralMessageCreate):
 
 @router.put("/{message_id}/approve", response_model=MuralMessage)
 async def approve_mural_message(message_id: str, _=Depends(require_permission("edit"))):
-    """Admin: mark message as paid + approved so it shows on the cork board."""
+    """Admin: mark message as paid + approved so it shows on the cork board.
+
+    Starts the 30-day display window from the moment of approval.
+    """
+    now = datetime.utcnow()
+    expires_at = now + timedelta(days=MURAL_DISPLAY_DAYS)
     result = await db.mural_messages.update_one(
         {"id": message_id},
-        {"$set": {"approved": True, "paid": True}},
+        {"$set": {"approved": True, "paid": True, "expires_at": expires_at}},
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Message not found")
 
+    updated = await db.mural_messages.find_one({"id": message_id}, {"_id": 0})
+    return MuralMessage(**updated)
+
+
+@router.put("/{message_id}/extend", response_model=MuralMessage)
+async def extend_mural_message(
+    message_id: str,
+    days: int = MURAL_DISPLAY_DAYS,
+    _=Depends(require_permission("edit")),
+):
+    """Extend (or reset) a mural message's display window by N days from now."""
+    existing = await db.mural_messages.find_one({"id": message_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    new_expiry = datetime.utcnow() + timedelta(days=max(1, days))
+    await db.mural_messages.update_one(
+        {"id": message_id},
+        {"$set": {"expires_at": new_expiry}},
+    )
     updated = await db.mural_messages.find_one({"id": message_id}, {"_id": 0})
     return MuralMessage(**updated)
 
@@ -134,4 +161,5 @@ async def get_mural_pricing():
     return {
         "tiers": TIER_PRICES,
         "givebacks_url": GIVEBACKS_URL,
+        "display_days": MURAL_DISPLAY_DAYS,
     }

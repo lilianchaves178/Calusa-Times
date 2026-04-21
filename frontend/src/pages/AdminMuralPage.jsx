@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Trash2, DollarSign, MessageCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Trash2, DollarSign, MessageCircle, Clock, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { useToast } from '../hooks/use-toast';
@@ -27,7 +27,7 @@ const AdminMuralPage = () => {
     try {
       const [pendingRes, approvedRes] = await Promise.all([
         api.get('/mural/pending'),
-        api.get('/mural'),
+        api.get('/mural', { params: { include_expired: true } }),
       ]);
       setPending(pendingRes.data);
       setApproved(approvedRes.data);
@@ -62,6 +62,19 @@ const AdminMuralPage = () => {
       toast({ title: 'Message deleted' });
     } catch (e) {
       toast({ title: 'Delete failed', variant: 'destructive' });
+    }
+  };
+
+  const handleExtend = async (id) => {
+    try {
+      const res = await api.put(`/mural/${id}/extend`);
+      setApproved((arr) => arr.map((m) => (m.id === id ? res.data : m)));
+      toast({
+        title: 'Expiry extended by 30 days',
+        description: `New expiry: ${new Date(res.data.expires_at).toLocaleDateString()}`,
+      });
+    } catch (e) {
+      toast({ title: 'Extend failed', variant: 'destructive' });
     }
   };
 
@@ -167,32 +180,57 @@ const AdminMuralPage = () => {
                 <Card className="p-8 text-center text-gray-500">No approved messages yet</Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {approved.map((msg) => (
-                    <Card
-                      key={msg.id}
-                      className="overflow-hidden"
-                      data-testid={`approved-message-${msg.id}`}
-                    >
-                      <div className={`${colorClasses[msg.color] || 'bg-yellow-200'} p-4`}>
-                        <p className="text-gray-800 font-handwriting text-sm mb-2">
-                          {msg.message}
-                        </p>
-                        <p className="text-gray-600 text-xs text-right">- {msg.author_name}</p>
-                      </div>
-                      <div className="p-2">
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(msg.id, true)}
-                          className="w-full"
-                          data-testid={`delete-approved-message-${msg.id}`}
-                        >
-                          <Trash2 size={14} className="mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
+                  {approved.map((msg) => {
+                    const expires = msg.expires_at ? new Date(msg.expires_at) : null;
+                    const expired = expires && expires.getTime() < Date.now();
+                    return (
+                      <Card
+                        key={msg.id}
+                        className={`overflow-hidden ${expired ? 'opacity-60' : ''}`}
+                        data-testid={`approved-message-${msg.id}`}
+                      >
+                        <div className={`${colorClasses[msg.color] || 'bg-yellow-200'} p-4 relative`}>
+                          {expired && (
+                            <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              EXPIRED
+                            </div>
+                          )}
+                          <p className="text-gray-800 font-handwriting text-sm mb-2">
+                            {msg.message}
+                          </p>
+                          <p className="text-gray-600 text-xs text-right">- {msg.author_name}</p>
+                        </div>
+                        <div className="px-3 py-2 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                          <Clock size={12} />
+                          {expires
+                            ? expired
+                              ? `Expired ${expires.toLocaleDateString()}`
+                              : `Expires ${expires.toLocaleDateString()}`
+                            : 'No expiry set'}
+                        </div>
+                        <div className="p-2 flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleExtend(msg.id)}
+                            className="flex-1"
+                            data-testid={`extend-approved-message-${msg.id}`}
+                          >
+                            <RefreshCw size={12} className="mr-1" />
+                            +30 days
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(msg.id, true)}
+                            data-testid={`delete-approved-message-${msg.id}`}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </div>
