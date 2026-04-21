@@ -27,15 +27,6 @@ const NewspaperHeader = () => {
           <Star className="absolute left-20 top-4 text-yellow-400" size={24} fill="#FBBF24" />
           <Star className="absolute right-20 top-4 text-yellow-400" size={24} fill="#FBBF24" />
 
-          <div className="flex justify-center mb-3">
-            <img
-              src="/branding/calusa-logo.jpg"
-              alt="Calusa Elementary — A Step Ahead"
-              className="w-20 h-20 rounded-full object-cover shadow-md ring-2 ring-yellow-400/60"
-              data-testid="masthead-calusa-logo"
-            />
-          </div>
-
           <h1 className="text-6xl font-black text-[#0f1e42] mb-3"
               style={{fontFamily: 'Georgia, serif'}}>
             The Calusa Times
