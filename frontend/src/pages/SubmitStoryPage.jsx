@@ -43,7 +43,7 @@ const SubmitStoryPage = () => {
       await api.post('/articles', { ...formData, image_url });
       toast({
         title: 'Story submitted!',
-        description: 'Thanks! Your story is now available for our editors.',
+        description: 'Thanks! Your story will appear after a Calusa Times editor approves it.',
       });
       navigate('/articles');
     } catch (err) {

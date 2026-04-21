@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from models import Comment, CommentCreate
 from routes.auth import require_permission
+from services import email_service
 from datetime import datetime
 
 router = APIRouter(prefix="/api/comments", tags=["comments"])
@@ -42,6 +43,7 @@ async def create_comment(comment: CommentCreate):
 
     obj = Comment(**comment.dict())
     await db.comments.insert_one(obj.dict())
+    email_service.fire_and_forget(email_service.notify_new_comment(db, obj.dict(), article.get("title")))
     return obj
 
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from routes.auth import require_permission
+from services import email_service
 from datetime import datetime
 import uuid
 import random
@@ -91,6 +92,7 @@ async def create_mural_message(payload: MuralMessageCreate):
     )
 
     await db.mural_messages.insert_one(msg.dict())
+    email_service.fire_and_forget(email_service.notify_new_mural_message(db, msg.dict()))
     return msg
 
 

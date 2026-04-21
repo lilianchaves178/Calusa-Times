@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from routes.auth import require_permission
+from services import email_service
 from datetime import datetime
 import uuid
 import shutil
@@ -62,6 +63,7 @@ async def get_pending_art(_=Depends(require_permission("edit"))):
 async def create_art_submission(submission: ArtSubmissionCreate):
     obj = ArtSubmission(**submission.dict())
     await db.art_submissions.insert_one(obj.dict())
+    email_service.fire_and_forget(email_service.notify_new_art(db, obj.dict()))
     return obj
 
 

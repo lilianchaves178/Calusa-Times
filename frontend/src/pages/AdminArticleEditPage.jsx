@@ -20,6 +20,7 @@ const defaultState = {
   image_url: '',
   featured: false,
   comments_enabled: true,
+  approved: false,
 };
 
 const AdminArticleEditPage = () => {
@@ -67,8 +68,12 @@ const AdminArticleEditPage = () => {
     setSaving(true);
     try {
       if (isNew) {
-        const { featured, comments_enabled, ...createPayload } = form;
+        const { featured, comments_enabled, approved, ...createPayload } = form;
+        // Admin creating -> auto-publish immediately
         const res = await api.post('/articles', { ...createPayload, featured, comments_enabled });
+        if (!res.data.approved) {
+          await api.put(`/articles/${res.data.id}/approve`);
+        }
         toast({ title: 'Article created' });
         navigate(`/admin/articles/${res.data.id}/edit`, { replace: true });
       } else {
@@ -214,6 +219,18 @@ const AdminArticleEditPage = () => {
             </div>
 
             <div className="flex items-center gap-6 flex-wrap">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!form.approved}
+                  onChange={(e) => update('approved', e.target.checked)}
+                  data-testid="article-approved-toggle"
+                  disabled={isNew}
+                />
+                <span className="font-semibold">
+                  Published {isNew && <span className="text-xs text-gray-500">(auto-publishes on create)</span>}
+                </span>
+              </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"

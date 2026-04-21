@@ -56,7 +56,10 @@ def require_permission(permission: str):
     return permission_checker
 
 @router.post("/register", response_model=UserResponse)
-async def register(user_data: UserCreate):
+async def register(
+    user_data: UserCreate,
+    _current: User = Depends(require_permission("manage_users")),
+):
     # Check if user already exists
     existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:

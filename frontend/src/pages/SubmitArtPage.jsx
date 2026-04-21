@@ -42,7 +42,7 @@ const SubmitArtPage = () => {
 
       toast({
         title: 'Art submitted!',
-        description: "Thanks! It'll appear in the gallery after approval.",
+        description: "Thanks! Your artwork will appear in the gallery after an editor approves it.",
       });
       navigate('/student-art');
     } catch (err) {

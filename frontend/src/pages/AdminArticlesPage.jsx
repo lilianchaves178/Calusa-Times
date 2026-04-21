@@ -1,23 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Newspaper, Edit, Trash2, Eye, Plus, Star } from 'lucide-react';
+import { ArrowLeft, Newspaper, Edit, Trash2, Eye, Plus, Star, CheckCircle, Search } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { Input } from '../components/ui/input';
 import { useToast } from '../hooks/use-toast';
 import api, { assetUrl } from '../lib/api';
+
+const CATEGORIES = ['all', 'news', 'arts', 'opinion', 'sports', 'poetry', 'science', 'quick thought'];
 
 const AdminArticlesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState('all'); // all | pending | published
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [sort, setSort] = useState('date_desc'); // date_desc | date_asc | views_desc | title_asc
 
   const loadArticles = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/articles');
+      const res = await api.get('/articles/admin/all');
       setArticles(res.data);
-    } catch (e) {
+    } catch {
       toast({ title: 'Failed to load articles', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -28,13 +35,23 @@ const AdminArticlesPage = () => {
     loadArticles();
   }, []);
 
+  const handleApprove = async (id) => {
+    try {
+      const res = await api.put(`/articles/${id}/approve`);
+      setArticles((arr) => arr.map((a) => (a.id === id ? res.data : a)));
+      toast({ title: 'Article published' });
+    } catch {
+      toast({ title: 'Approve failed', variant: 'destructive' });
+    }
+  };
+
   const handleDelete = async (articleId) => {
-    if (!window.confirm('Are you sure you want to delete this article?')) return;
+    if (!window.confirm('Delete this article?')) return;
     try {
       await api.delete(`/articles/${articleId}`);
       setArticles((arr) => arr.filter((a) => a.id !== articleId));
       toast({ title: 'Article deleted' });
-    } catch (e) {
+    } catch {
       toast({ title: 'Delete failed', variant: 'destructive' });
     }
   };
@@ -44,7 +61,7 @@ const AdminArticlesPage = () => {
       const res = await api.put(`/articles/${article.id}`, { featured: !article.featured });
       setArticles((arr) => arr.map((a) => (a.id === article.id ? res.data : a)));
       toast({ title: res.data.featured ? 'Marked featured' : 'Removed featured' });
-    } catch (e) {
+    } catch {
       toast({ title: 'Update failed', variant: 'destructive' });
     }
   };
@@ -56,10 +73,42 @@ const AdminArticlesPage = () => {
       });
       setArticles((arr) => arr.map((a) => (a.id === article.id ? res.data : a)));
       toast({ title: res.data.comments_enabled ? 'Comments enabled' : 'Comments disabled' });
-    } catch (e) {
+    } catch {
       toast({ title: 'Update failed', variant: 'destructive' });
     }
   };
+
+  const filtered = useMemo(() => {
+    let out = [...articles];
+    if (tab === 'pending') out = out.filter((a) => !a.approved);
+    if (tab === 'published') out = out.filter((a) => a.approved);
+    if (category !== 'all') out = out.filter((a) => a.category === category);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      out = out.filter(
+        (a) =>
+          a.title?.toLowerCase().includes(q) ||
+          a.author?.toLowerCase().includes(q) ||
+          a.description?.toLowerCase().includes(q),
+      );
+    }
+    out.sort((a, b) => {
+      if (sort === 'date_desc') return new Date(b.date) - new Date(a.date);
+      if (sort === 'date_asc') return new Date(a.date) - new Date(b.date);
+      if (sort === 'views_desc') return (b.views || 0) - (a.views || 0);
+      if (sort === 'title_asc') return (a.title || '').localeCompare(b.title || '');
+      return 0;
+    });
+    return out;
+  }, [articles, tab, category, search, sort]);
+
+  const pendingCount = articles.filter((a) => !a.approved).length;
+
+  const tabs = [
+    { key: 'all', label: `All (${articles.length})` },
+    { key: 'pending', label: `Pending (${pendingCount})` },
+    { key: 'published', label: `Published (${articles.length - pendingCount})` },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -75,15 +124,26 @@ const AdminArticlesPage = () => {
             Back to Dashboard
           </Button>
           <h1 className="text-3xl font-bold">Articles Management</h1>
-          <p className="text-blue-200 text-sm">Create, edit, and manage all articles</p>
+          <p className="text-blue-200 text-sm">Moderate, edit, and manage all articles</p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold" data-testid="articles-count">
-            All Articles ({articles.length})
-          </h2>
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex gap-2">
+            {tabs.map((t) => (
+              <Button
+                key={t.key}
+                variant={tab === t.key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTab(t.key)}
+                data-testid={`tab-${t.key}`}
+                className={tab === t.key ? 'bg-blue-700 hover:bg-blue-800' : ''}
+              >
+                {t.label}
+              </Button>
+            ))}
+          </div>
           <Button
             className="bg-blue-600 text-white hover:bg-blue-700"
             onClick={() => navigate('/admin/articles/new')}
@@ -94,13 +154,57 @@ const AdminArticlesPage = () => {
           </Button>
         </div>
 
+        {/* Search + filters */}
+        <Card className="p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="md:col-span-2 relative">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <Input
+                placeholder="Search title, author, description…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="articles-search-input"
+              />
+            </div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              data-testid="articles-category-filter"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c === 'all' ? 'All categories' : c}
+                </option>
+              ))}
+            </select>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              data-testid="articles-sort"
+            >
+              <option value="date_desc">Newest first</option>
+              <option value="date_asc">Oldest first</option>
+              <option value="views_desc">Most viewed</option>
+              <option value="title_asc">Title A–Z</option>
+            </select>
+          </div>
+        </Card>
+
         {loading ? (
           <div className="text-center py-12 text-gray-600">Loading articles…</div>
-        ) : articles.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <Card className="p-12 text-center">
             <Newspaper size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No articles yet</h3>
-            <p className="text-gray-600 mb-4">Get started by creating your first article!</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No articles match</h3>
+            <p className="text-gray-600 mb-4">
+              Try clearing filters, or create a new article.
+            </p>
             <Button onClick={() => navigate('/admin/articles/new')} data-testid="empty-create-btn">
               <Plus size={18} className="mr-2" />
               Create Article
@@ -108,10 +212,12 @@ const AdminArticlesPage = () => {
           </Card>
         ) : (
           <div className="space-y-4">
-            {articles.map((article) => (
+            {filtered.map((article) => (
               <Card
                 key={article.id}
-                className="p-6 hover:shadow-lg transition-shadow"
+                className={`p-6 hover:shadow-lg transition-shadow ${
+                  !article.approved ? 'border-l-4 border-yellow-400' : ''
+                }`}
                 data-testid={`article-row-${article.id}`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -123,10 +229,19 @@ const AdminArticlesPage = () => {
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase">
                         {article.category}
                       </span>
+                      {article.approved ? (
+                        <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                          PUBLISHED
+                        </span>
+                      ) : (
+                        <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">
+                          PENDING
+                        </span>
+                      )}
                       {article.featured && (
                         <span className="inline-block px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full">
                           <Star size={10} className="inline mr-1" />
@@ -154,6 +269,17 @@ const AdminArticlesPage = () => {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 ml-4 flex-shrink-0">
+                    {!article.approved && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(article.id)}
+                        className="bg-green-600 hover:bg-green-700"
+                        data-testid={`approve-article-${article.id}`}
+                      >
+                        <CheckCircle size={16} className="mr-1" />
+                        Approve
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

@@ -3,6 +3,7 @@ from typing import List, Optional
 from models import Article, ArticleCreate, ArticleUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
 from routes.auth import require_permission
+from services import email_service
 import os
 import uuid
 from datetime import datetime
@@ -23,20 +24,43 @@ UPLOADS_DIR = Path("/app/uploads/articles")
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.get("", response_model=List[Article])
-async def get_articles(featured: Optional[bool] = None, category: Optional[str] = None):
+async def get_articles(
+    featured: Optional[bool] = None,
+    category: Optional[str] = None,
+    approved_only: bool = True,
+):
     query = {}
     if featured is not None:
         query["featured"] = featured
     if category:
         query["category"] = category
-    
+    if approved_only:
+        query["approved"] = True
+
     articles = await db.articles.find(query, {"_id": 0}).sort("date", -1).to_list(100)
     return [Article(**article) for article in articles]
+
+
+@router.get("/pending", response_model=List[Article])
+async def get_pending_articles(_=Depends(require_permission("edit"))):
+    articles = await db.articles.find({"approved": False}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return [Article(**a) for a in articles]
+
+
+@router.get("/admin/all", response_model=List[Article])
+async def get_all_articles_admin(_=Depends(require_permission("edit"))):
+    articles = await db.articles.find({}, {"_id": 0}).sort("date", -1).to_list(500)
+    return [Article(**a) for a in articles]
+
 
 @router.get("/{article_id}", response_model=Article)
 async def get_article(article_id: str, request: Request):
     article = await db.articles.find_one({"id": article_id}, {"_id": 0})
     if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    # Hide unapproved articles from public detail view
+    if not article.get("approved", False):
         raise HTTPException(status_code=404, detail="Article not found")
     
     # Track view
@@ -60,7 +84,22 @@ async def create_article(article: ArticleCreate):
     article_dict = article.dict()
     article_obj = Article(**article_dict)
     await db.articles.insert_one(article_obj.dict())
+    # Fire off admin email notification (no-op if RESEND_API_KEY is unset)
+    email_service.fire_and_forget(email_service.notify_new_article(db, article_obj.dict()))
     return article_obj
+
+@router.put("/{article_id}/approve", response_model=Article)
+async def approve_article(article_id: str, _=Depends(require_permission("edit"))):
+    existing = await db.articles.find_one({"id": article_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Article not found")
+    await db.articles.update_one(
+        {"id": article_id},
+        {"$set": {"approved": True, "updated_at": datetime.utcnow()}},
+    )
+    updated = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    return Article(**updated)
+
 
 @router.put("/{article_id}", response_model=Article)
 async def update_article(article_id: str, article_update: ArticleUpdate, _=Depends(require_permission("edit"))):

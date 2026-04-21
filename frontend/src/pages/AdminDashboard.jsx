@@ -21,6 +21,7 @@ const AdminDashboard = () => {
   const [user, setUser] = useState(null);
   const [counts, setCounts] = useState({
     articles: '—',
+    pendingArticles: '—',
     pendingComments: '—',
     users: '—',
     pendingArt: '—',
@@ -41,9 +42,10 @@ const AdminDashboard = () => {
           return null;
         }
       };
-      const [articles, pendingComments, users, pendingArt, sponsors, pendingMural, popups] =
+      const [articles, pendingArticles, pendingComments, users, pendingArt, sponsors, pendingMural, popups] =
         await Promise.all([
-          safe(() => api.get('/articles')),
+          safe(() => api.get('/articles/admin/all')),
+          safe(() => api.get('/articles/pending')),
           safe(() => api.get('/comments/pending/all')),
           safe(() => api.get('/auth/users')),
           safe(() => api.get('/art/pending')),
@@ -54,6 +56,7 @@ const AdminDashboard = () => {
 
       setCounts({
         articles: articles?.data?.length ?? '—',
+        pendingArticles: pendingArticles?.data?.length ?? '—',
         pendingComments: pendingComments?.data?.length ?? '—',
         users: users?.data?.length ?? '—',
         pendingArt: pendingArt?.data?.length ?? '—',
@@ -80,7 +83,7 @@ const AdminDashboard = () => {
       description: 'Create, edit, and manage articles',
       color: 'bg-blue-500',
       link: '/admin/articles',
-      count: `${counts.articles} articles`,
+      count: `${counts.pendingArticles} pending · ${counts.articles} total`,
       testId: 'section-articles',
     },
     {

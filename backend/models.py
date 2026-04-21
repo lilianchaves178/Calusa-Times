@@ -14,6 +14,7 @@ class Article(BaseModel):
     image_url: Optional[str] = None
     featured: bool = False
     comments_enabled: bool = True
+    approved: bool = False
     views: int = 0
     clicks: int = 0
     date: datetime = Field(default_factory=datetime.utcnow)
@@ -41,6 +42,7 @@ class ArticleUpdate(BaseModel):
     image_url: Optional[str] = None
     featured: Optional[bool] = None
     comments_enabled: Optional[bool] = None
+    approved: Optional[bool] = None
 
 class Comment(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
