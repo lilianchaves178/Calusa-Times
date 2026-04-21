@@ -138,3 +138,20 @@ async def notify_new_comment(db, comment: dict, article_title: Optional[str] = N
         f"</blockquote>"
     )
     await _send_to(recipients, subject, _render_template(subject, body, "Moderate Comments", "/admin/comments"))
+
+
+async def notify_new_spotlight(db, student: dict) -> None:
+    if not is_enabled():
+        return
+    recipients = await _admin_emails(db)
+    subject = f"New Spotlight submission: {student.get('name', 'Anonymous')}"
+    body = (
+        f"<p><strong>{student.get('name', 'A student')}</strong>"
+        + (f" ({student.get('grade')})" if student.get('grade') else '')
+        + " submitted a Spotlight story:</p>"
+        f"<blockquote style=\"border-left: 4px solid #f59e0b; padding: 8px 12px; color: #475569; margin: 12px 0; background: #fffbeb;\">"
+        f"{student.get('quote', '')}"
+        f"</blockquote>"
+        f"<p>Review and approve it to feature them on the Spotlight page.</p>"
+    )
+    await _send_to(recipients, subject, _render_template(subject, body, "Review Spotlight", "/admin/spotlight"))

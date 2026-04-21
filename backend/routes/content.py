@@ -35,6 +35,7 @@ class SpotlightStudent(BaseModel):
     image_url: Optional[str] = None
     order: int = 0
     is_active: bool = True
+    approved: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -47,6 +48,12 @@ class SpotlightCreate(BaseModel):
     is_active: bool = True
 
 
+class SpotlightPublicSubmit(BaseModel):
+    name: str
+    grade: Optional[str] = None
+    quote: str
+
+
 class SpotlightUpdate(BaseModel):
     name: Optional[str] = None
     grade: Optional[str] = None
@@ -54,13 +61,85 @@ class SpotlightUpdate(BaseModel):
     image_url: Optional[str] = None
     order: Optional[int] = None
     is_active: Optional[bool] = None
+    approved: Optional[bool] = None
 
 
 @spotlight_router.get("", response_model=List[SpotlightStudent])
 async def get_spotlight(active_only: bool = True):
-    query = {"is_active": True} if active_only else {}
-    items = await db.spotlight.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    if active_only:
+        query = {"approved": True, "is_active": True}
+    else:
+        query = {}
+    items = await db.spotlight.find(query, {"_id": 0}).sort("order", 1).to_list(200)
     return [SpotlightStudent(**i) for i in items]
+
+
+@spotlight_router.get("/pending", response_model=List[SpotlightStudent])
+async def get_pending_spotlight(_=Depends(require_permission("edit"))):
+    items = await db.spotlight.find({"approved": False}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return [SpotlightStudent(**i) for i in items]
+
+
+@spotlight_router.post("/submit", response_model=SpotlightStudent)
+async def public_submit_spotlight(payload: SpotlightPublicSubmit):
+    """Public endpoint — students/parents submit their own shine-worthy story.
+
+    Saved as pending (approved=false) until an admin approves it.
+    """
+    obj = SpotlightStudent(
+        name=payload.name,
+        grade=payload.grade,
+        quote=payload.quote,
+        approved=False,
+        is_active=True,
+        order=0,
+    )
+    await db.spotlight.insert_one(obj.dict())
+    # Notify admins so they can approve it (reuses the existing Resend pipeline).
+    try:
+        from services import email_service
+        email_service.fire_and_forget(
+            email_service.notify_new_spotlight(db, obj.dict())
+        )
+    except Exception:
+        pass
+    return obj
+
+
+@spotlight_router.post("/{student_id}/upload-image-public")
+async def upload_spotlight_image_public(student_id: str, file: UploadFile = File(...)):
+    """Public: attach an image to a just-created submission.
+
+    Only works on unapproved submissions so this can't be used to replace an
+    already-published student's photo.
+    """
+    existing = await db.spotlight.find_one({"id": student_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    if existing.get("approved"):
+        raise HTTPException(status_code=403, detail="This submission is already approved")
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    ext = file.filename.split(".")[-1]
+    unique = f"{uuid.uuid4()}.{ext}"
+    out = UPLOADS_DIR / unique
+    with open(out, "wb") as buf:
+        shutil.copyfileobj(file.file, buf)
+    image_url = f"/api/uploads/spotlight/{unique}"
+    await db.spotlight.update_one({"id": student_id}, {"$set": {"image_url": image_url}})
+    return {"image_url": image_url}
+
+
+@spotlight_router.put("/{student_id}/approve", response_model=SpotlightStudent)
+async def approve_spotlight(student_id: str, _=Depends(require_permission("edit"))):
+    res = await db.spotlight.update_one(
+        {"id": student_id},
+        {"$set": {"approved": True, "is_active": True}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    updated = await db.spotlight.find_one({"id": student_id}, {"_id": 0})
+    return SpotlightStudent(**updated)
 
 
 @spotlight_router.post("", response_model=SpotlightStudent)

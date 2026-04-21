@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   ToggleLeft,
   ToggleRight,
+  CheckCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -33,8 +34,15 @@ const AdminSpotlightPage = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/spotlight', { params: { active_only: false } });
-      setList(res.data);
+      const [all, pendingRes] = await Promise.all([
+        api.get('/spotlight', { params: { active_only: false } }),
+        api.get('/spotlight/pending'),
+      ]);
+      // Merge — /spotlight (active_only=false) still filters by approved=True for non-admin.
+      // Combine approved results with pending ones so the admin sees everything.
+      const byId = new Map();
+      [...all.data, ...pendingRes.data].forEach((s) => byId.set(s.id, s));
+      setList(Array.from(byId.values()));
     } catch {
       toast({ title: 'Failed to load', variant: 'destructive' });
     } finally {
@@ -98,6 +106,16 @@ const AdminSpotlightPage = () => {
       load();
     } catch {
       toast({ title: 'Toggle failed', variant: 'destructive' });
+    }
+  };
+
+  const approve = async (student) => {
+    try {
+      await api.put(`/spotlight/${student.id}/approve`);
+      toast({ title: 'Spotlight approved', description: `${student.name} is now live.` });
+      load();
+    } catch {
+      toast({ title: 'Approve failed', variant: 'destructive' });
     }
   };
 
@@ -217,10 +235,14 @@ const AdminSpotlightPage = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {list.map((student) => (
+            {[...list]
+              .sort((a, b) => Number(a.approved) - Number(b.approved))
+              .map((student) => (
               <Card
                 key={student.id}
-                className={`p-4 ${!student.is_active ? 'opacity-60' : ''}`}
+                className={`p-4 ${!student.is_active ? 'opacity-60' : ''} ${
+                  !student.approved ? 'border-l-4 border-yellow-400' : ''
+                }`}
                 data-testid={`spotlight-row-${student.id}`}
               >
                 <div className="flex gap-3 mb-3">
@@ -236,12 +258,30 @@ const AdminSpotlightPage = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold truncate">{student.name}</h3>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-bold truncate">{student.name}</h3>
+                      {!student.approved && (
+                        <span className="text-[10px] bg-yellow-100 text-yellow-800 font-bold uppercase px-1.5 py-0.5 rounded">
+                          PENDING
+                        </span>
+                      )}
+                    </div>
                     {student.grade && <p className="text-xs text-gray-600">{student.grade}</p>}
                     <p className="text-xs text-gray-500 mt-1 line-clamp-2 italic">"{student.quote}"</p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
+                  {!student.approved && (
+                    <Button
+                      size="sm"
+                      onClick={() => approve(student)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      data-testid={`approve-spotlight-${student.id}`}
+                    >
+                      <CheckCircle size={14} className="mr-1" />
+                      Approve
+                    </Button>
+                  )}
                   <label className="flex items-center gap-2 cursor-pointer px-3 py-1.5 bg-gray-50 rounded text-xs hover:bg-gray-100">
                     <Upload size={12} />
                     {savingImageFor === student.id ? 'Uploading…' : 'Upload photo'}
