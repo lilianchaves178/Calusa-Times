@@ -32,3 +32,19 @@ async def serve_sponsor_logo(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     
     return FileResponse(file_path)
+
+
+@router.get("/spotlight/{filename}")
+async def serve_spotlight_image(filename: str):
+    file_path = UPLOADS_DIR / "spotlight" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path)
+
+
+@router.get("/school/{filename}")
+async def serve_school_image(filename: str):
+    file_path = UPLOADS_DIR / "school" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path)

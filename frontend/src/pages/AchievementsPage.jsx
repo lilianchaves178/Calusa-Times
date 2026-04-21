@@ -1,73 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Trophy } from 'lucide-react';
-import { achievements } from '../mockData';
+import { Trophy, Award } from 'lucide-react';
+import api from '../lib/api';
 
-const allAchievements = [
-  ...achievements,
-  {
-    id: '5',
-    title: 'Perfect Attendance Award',
-    recipient: 'James Peterson',
-    category: 'ATTENDANCE',
-    badge: 'attendance'
-  },
-  {
-    id: '6',
-    title: 'Math Competition 1st Place',
-    recipient: 'Sophia Chen',
-    category: 'ACADEMIC',
-    badge: 'academic'
-  },
-  {
-    id: '7',
-    title: 'Community Service Leader',
-    recipient: 'Olivia Martinez',
-    category: 'LEADERSHIP',
-    badge: 'leadership'
-  },
-  {
-    id: '8',
-    title: 'Outstanding Music Performance',
-    recipient: 'Ethan Brown',
-    category: 'ARTS',
-    badge: 'arts'
-  }
-];
+const categoryColors = {
+  ACADEMIC: 'bg-blue-100 text-blue-700',
+  SPORTS: 'bg-green-100 text-green-700',
+  LEADERSHIP: 'bg-purple-100 text-purple-700',
+  ARTS: 'bg-pink-100 text-pink-700',
+  ATTENDANCE: 'bg-yellow-100 text-yellow-700',
+  STEM: 'bg-indigo-100 text-indigo-700',
+};
 
 const AchievementsPage = () => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api
+      .get('/achievements', { params: { limit: 200 } })
+      .then((res) => setItems(res.data))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#FFF8E7]">
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <Trophy size={32} className="text-[#0f1e42]" />
-            <h1 className="text-4xl font-black text-[#0f1e42]">Achievements</h1>
+            <Trophy size={32} className="text-[#FFD700]" />
+            <h1 className="text-4xl font-black text-[#0f1e42]">Achievements & Awards</h1>
           </div>
-          <p className="text-gray-600">Celebrating the accomplishments of our Calusa community</p>
+          <p className="text-gray-600">
+            Celebrating the accomplishments of our incredible Calusa community!
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {allAchievements.map((achievement) => (
-            <div key={achievement.id} className="bg-white rounded-xl border-2 border-gray-200 p-6 transition-all hover:shadow-lg hover:border-[#FFD700]">
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center flex-shrink-0">
-                  <Trophy size={24} className="text-[#0f1e42]" />
+        {loading ? (
+          <p className="text-gray-500">Loading…</p>
+        ) : items.length === 0 ? (
+          <p className="text-gray-500" data-testid="no-achievements-msg">
+            No achievements yet. Check back soon!
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {items.map((a) => (
+              <div
+                key={a.id}
+                className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-[#FFD700]"
+                data-testid={`achievement-${a.id}`}
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Award size={28} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <span
+                      className={`inline-block text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-2 ${
+                        categoryColors[a.category] || 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {a.category}
+                    </span>
+                    <h3 className="font-bold text-[#0f1e42] text-lg leading-tight">{a.title}</h3>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-[#0f1e42] text-lg mb-2 leading-tight">{achievement.title}</h3>
-                  <p className="text-gray-600 text-sm mb-3">{achievement.recipient}</p>
-                  <span className="inline-block bg-gray-100 text-gray-700 text-xs font-semibold px-3 py-1 rounded uppercase tracking-wide">
-                    {achievement.category}
-                  </span>
-                </div>
+                <p className="text-gray-700 font-semibold mb-2">{a.recipient}</p>
+                {a.description && <p className="text-sm text-gray-600">{a.description}</p>}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Footer />

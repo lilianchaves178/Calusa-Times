@@ -21,6 +21,9 @@ import AdminSponsorEditPage from "./pages/AdminSponsorEditPage";
 import AdminMuralPage from "./pages/AdminMuralPage";
 import AdminPopupsPage from "./pages/AdminPopupsPage";
 import AdminPopupEditPage from "./pages/AdminPopupEditPage";
+import AdminSpotlightPage from "./pages/AdminSpotlightPage";
+import AdminAchievementsPage from "./pages/AdminAchievementsPage";
+import AdminSchoolInfoPage from "./pages/AdminSchoolInfoPage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -80,6 +83,10 @@ function App() {
           <Route path="/admin/popups/:id/edit" element={<Protected permission="edit"><AdminPopupEditPage /></Protected>} />
 
           <Route path="/admin/analytics" element={<Protected><AdminAnalyticsPage /></Protected>} />
+
+          <Route path="/admin/spotlight" element={<Protected permission="edit"><AdminSpotlightPage /></Protected>} />
+          <Route path="/admin/achievements" element={<Protected permission="edit"><AdminAchievementsPage /></Protected>} />
+          <Route path="/admin/school-info" element={<Protected permission="edit"><AdminSchoolInfoPage /></Protected>} />
         </Routes>
       </BrowserRouter>
       <Toaster />

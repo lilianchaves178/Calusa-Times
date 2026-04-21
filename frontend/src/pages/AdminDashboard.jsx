@@ -11,6 +11,9 @@ import {
   Megaphone,
   LogOut,
   BarChart3,
+  Award,
+  Info,
+  Star,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -148,6 +151,33 @@ const AdminDashboard = () => {
       link: '/admin/analytics',
       count: 'View stats',
       testId: 'section-analytics',
+    },
+    {
+      title: 'Student Spotlight',
+      icon: Star,
+      description: 'Feature students on the homepage',
+      color: 'bg-amber-500',
+      link: '/admin/spotlight',
+      count: 'Manage',
+      testId: 'section-spotlight',
+    },
+    {
+      title: 'Achievements',
+      icon: Award,
+      description: 'Awards, honors, recognitions',
+      color: 'bg-emerald-500',
+      link: '/admin/achievements',
+      count: 'Manage',
+      testId: 'section-achievements',
+    },
+    {
+      title: 'School Info',
+      icon: Info,
+      description: 'Edit the About / School Info page',
+      color: 'bg-cyan-500',
+      link: '/admin/school-info',
+      count: 'Edit',
+      testId: 'section-school-info',
     },
   ];
 
