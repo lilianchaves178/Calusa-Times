@@ -4,6 +4,7 @@ import NewspaperHeader from '../components/NewspaperHeader';
 import ArticleCard from '../components/ArticleCard';
 import StudentSpotlight from '../components/StudentSpotlight';
 import AchievementsSection from '../components/AchievementsSection';
+import PhotoOfTheWeek from '../components/PhotoOfTheWeek';
 import Footer from '../components/Footer';
 import { Newspaper, Sparkles } from 'lucide-react';
 import api, { assetUrl } from '../lib/api';
@@ -67,6 +68,8 @@ const HomePage = () => {
             <StudentSpotlight />
           </div>
         </div>
+
+        <PhotoOfTheWeek />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-4">
           <div className="lg:col-span-2">

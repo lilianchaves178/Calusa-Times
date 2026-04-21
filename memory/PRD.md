@@ -46,7 +46,7 @@ See `/app/memory/test_credentials.md`.
 
 ## Key API Endpoints (admin-guarded ones need Bearer token)
 - **Auth**: `POST /login`, `GET /me`, admin: `POST /register`, `GET/DELETE /users`, `PUT /users/{id}/role`
-- **Articles**: `GET/POST /articles`, `GET /articles/{id}`, `POST /articles/{id}/click`. Admin: `PUT /articles/{id}`, `DELETE /articles/{id}`, `PUT /articles/{id}/approve`, `GET /articles/pending`, `GET /articles/admin/all`, `GET /articles/{id}/analytics`, `POST /articles/upload-image`, `POST /articles/{id}/upload-image`
+- **Articles**: `GET/POST /articles`, `GET /articles/{id}`, `GET /articles/photos-of-the-week`, `POST /articles/{id}/click`. Admin: `PUT /articles/{id}`, `DELETE /articles/{id}`, `PUT /articles/{id}/approve`, `GET /articles/pending`, `GET /articles/admin/all`, `GET /articles/{id}/analytics`, `POST /articles/upload-image`, `POST /articles/{id}/upload-image`
 - **Comments**: `GET /comments/{article_id}`, `POST /comments`. Admin: `PUT /{id}/approve`, `DELETE /{id}`, `GET /pending/all`
 - **Sponsors**: `GET /sponsors`. Admin: `POST/PUT/DELETE`, `POST /{id}/upload-logo`
 - **Art**: `GET/POST /art`, `POST /art/{id}/upload-image`. Admin: `PUT /{id}/approve`, `PUT /{id}/feature`, `DELETE /{id}`, `GET /pending`
@@ -71,6 +71,11 @@ See `/app/memory/test_credentials.md`.
 - Backend: new `/api/pexels/search` + `/api/pexels/import` proxy (API key never hits the browser). `ArtSubmissionCreate` and `SpotlightPublicSubmit` gained optional `image_url` for direct Pexels-import flows. `create_article` coerces `images=None → []` to handle old clients.
 - Frontend: `PexelsImagePicker.jsx` (portal-free modal, Enter-to-search, per-photo import, `target` prop selects uploads subfolder). No nested `<form>` (HTML-valid inside parent submission forms).
 - Tests: Pexels suite **12/12** green. 4/4 end-to-end submission flows verified with playwright. 0 hydration errors across consumer pages.
+
+### Iteration 8 (Feb 22, 2026)
+- 📸 **Photo of the Week** — new auto-rotating slot on the homepage (between the Featured Story and Latest Stories). Pulls all images from approved articles in the last 14 days (backfills with older approved ones if fewer than 8 are available), auto-advances every 5s, pauses on hover, each slide links directly to the article. Works as a showcase for newly submitted stories (now effortless with the Pexels picker) — designed to bring parents back weekly.
+- Backend: `GET /api/articles/photos-of-the-week?limit=8` returns `{photos: [{article_id, title, author, category, image_url, date}]}`. Route registered before `/{article_id}` to avoid path collision.
+- Frontend: `components/PhotoOfTheWeek.jsx` — gracefully hides when no photos exist; keyboard-accessible nav arrows on hover; progress dots with active-slide highlight.
 
 ## Backlog
 ### P1

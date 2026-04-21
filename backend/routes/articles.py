@@ -6,7 +6,7 @@ from routes.auth import require_permission
 from services import email_service
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 import shutil
 from pathlib import Path
 
@@ -51,6 +51,52 @@ async def get_pending_articles(_=Depends(require_permission("edit"))):
 async def get_all_articles_admin(_=Depends(require_permission("edit"))):
     articles = await db.articles.find({}, {"_id": 0}).sort("date", -1).to_list(500)
     return [Article(**a) for a in articles]
+
+
+@router.get("/photos-of-the-week")
+async def get_photos_of_the_week(limit: int = 8):
+    """Flatten approved-article images into a small slideshow-friendly list.
+
+    Prefers articles from the last 14 days; if fewer than ``limit`` photos are
+    found there, backfills with the most recent approved articles.
+    """
+    limit = max(1, min(limit, 20))
+    recent_cutoff = datetime.utcnow() - timedelta(days=14)
+
+    def flatten(article_docs):
+        out = []
+        for a in article_docs:
+            photos = list(a.get("images") or [])
+            if a.get("image_url") and a["image_url"] not in photos:
+                photos.insert(0, a["image_url"])
+            for url in photos:
+                if not url:
+                    continue
+                out.append({
+                    "article_id": a["id"],
+                    "title": a["title"],
+                    "author": a.get("author"),
+                    "category": a.get("category"),
+                    "image_url": url,
+                    "date": a.get("date"),
+                })
+        return out
+
+    primary = await db.articles.find(
+        {"approved": True, "date": {"$gte": recent_cutoff}},
+        {"_id": 0},
+    ).sort("date", -1).to_list(60)
+
+    photos = flatten(primary)[:limit]
+
+    if len(photos) < limit:
+        backfill = await db.articles.find(
+            {"approved": True, "date": {"$lt": recent_cutoff}},
+            {"_id": 0},
+        ).sort("date", -1).to_list(60)
+        photos.extend(flatten(backfill)[: (limit - len(photos))])
+
+    return {"photos": photos}
 
 
 @router.get("/{article_id}", response_model=Article)
