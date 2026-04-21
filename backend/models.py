@@ -12,6 +12,7 @@ class Article(BaseModel):
     author: str
     grade: Optional[str] = None
     image_url: Optional[str] = None
+    images: List[str] = Field(default_factory=list)
     featured: bool = False
     comments_enabled: bool = True
     approved: bool = False
@@ -29,6 +30,7 @@ class ArticleCreate(BaseModel):
     author: str
     grade: Optional[str] = None
     image_url: Optional[str] = None
+    images: Optional[List[str]] = None
     featured: bool = False
     comments_enabled: bool = True
 
@@ -40,6 +42,7 @@ class ArticleUpdate(BaseModel):
     author: Optional[str] = None
     grade: Optional[str] = None
     image_url: Optional[str] = None
+    images: Optional[List[str]] = None
     featured: Optional[bool] = None
     comments_enabled: Optional[bool] = None
     approved: Optional[bool] = None

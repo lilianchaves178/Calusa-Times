@@ -2,12 +2,72 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Calendar, Edit, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Calendar, Edit, ArrowLeft, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
 import { Input } from '../components/ui/input';
 import { useToast } from '../hooks/use-toast';
 import api, { assetUrl } from '../lib/api';
+
+const ArticleGallery = ({ images }) => {
+  const [idx, setIdx] = useState(0);
+  if (!images.length) return null;
+  const n = images.length;
+  const prev = () => setIdx((i) => (i - 1 + n) % n);
+  const next = () => setIdx((i) => (i + 1) % n);
+
+  return (
+    <div className="mb-6" data-testid="article-gallery">
+      <div className="relative rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center" style={{ aspectRatio: '16 / 9' }}>
+        <img
+          src={assetUrl(images[idx])}
+          alt={`Slide ${idx + 1}`}
+          className="max-w-full max-h-full w-auto h-auto object-contain"
+          data-testid={`article-slide-${idx}`}
+        />
+        {n > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Previous image"
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition"
+              data-testid="article-gallery-prev"
+            >
+              <ChevronLeft size={22} className="text-[#0f1e42]" />
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Next image"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition"
+              data-testid="article-gallery-next"
+            >
+              <ChevronRight size={22} className="text-[#0f1e42]" />
+            </button>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setIdx(i)}
+                  aria-label={`Go to slide ${i + 1}`}
+                  className={`w-2.5 h-2.5 rounded-full transition ${
+                    i === idx ? 'bg-[#0f1e42]' : 'bg-white/70 hover:bg-white'
+                  }`}
+                  data-testid={`article-gallery-dot-${i}`}
+                />
+              ))}
+            </div>
+            <div className="absolute top-3 right-3 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded-full">
+              {idx + 1} / {n}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const ArticleDetailPage = () => {
   const { id } = useParams();
@@ -90,13 +150,14 @@ const ArticleDetailPage = () => {
         </Link>
 
         <article className="bg-white rounded-2xl border-4 border-[#0f1e42] p-8 shadow-lg">
-          {article.image_url && (
-            <img
-              src={assetUrl(article.image_url)}
-              alt={article.title}
-              className="w-full max-h-96 object-cover rounded-xl mb-6"
-            />
-          )}
+          {(() => {
+            const gallery = (article.images && article.images.length
+              ? article.images
+              : article.image_url
+                ? [article.image_url]
+                : []);
+            return gallery.length ? <ArticleGallery images={gallery} /> : null;
+          })()}
           <div className="mb-4">
             <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
               {article.category}

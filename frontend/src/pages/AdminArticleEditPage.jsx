@@ -18,6 +18,7 @@ const defaultState = {
   author: '',
   grade: '',
   image_url: '',
+  images: [],
   featured: false,
   comments_enabled: true,
   approved: false,
@@ -44,22 +45,65 @@ const AdminArticleEditPage = () => {
 
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
-  const handleImageUpload = async (file) => {
-    if (!file) return;
+  const handleImageUpload = async (files) => {
+    if (!files || !files.length) return;
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const endpoint = isNew ? '/articles/upload-image' : `/articles/${id}/upload-image`;
-      const res = await api.post(endpoint, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      update('image_url', res.data.image_url);
-      toast({ title: 'Image uploaded' });
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        if (isNew) {
+          // standalone upload — just collect URLs and stage locally
+          const res = await api.post('/articles/upload-image', fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          setForm((f) => {
+            const staged = f.images && f.images.length ? f.images : f.image_url ? [f.image_url] : [];
+            const nextImages = [...staged, res.data.image_url];
+            return { ...f, images: nextImages, image_url: nextImages[0] };
+          });
+        } else {
+          const res = await api.post(`/articles/${id}/upload-image`, fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          // Server returns the updated images array
+          setForm((f) => ({
+            ...f,
+            images: res.data.images || [res.data.image_url],
+            image_url: (res.data.images && res.data.images[0]) || res.data.image_url,
+          }));
+        }
+      }
+      toast({ title: files.length > 1 ? `${files.length} images uploaded` : 'Image uploaded' });
     } catch (e) {
       toast({ title: 'Image upload failed', variant: 'destructive' });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async (imageUrl) => {
+    if (isNew) {
+      setForm((f) => {
+        const nextImages = (f.images || []).filter((u) => u !== imageUrl);
+        return {
+          ...f,
+          images: nextImages,
+          image_url: nextImages[0] || '',
+        };
+      });
+      return;
+    }
+    try {
+      const res = await api.delete(`/articles/${id}/images`, { params: { image_url: imageUrl } });
+      setForm((f) => ({
+        ...f,
+        images: res.data.images || [],
+        image_url: res.data.image_url || '',
+      }));
+      toast({ title: 'Image removed' });
+    } catch (e) {
+      toast({ title: 'Remove failed', variant: 'destructive' });
     }
   };
 
@@ -187,26 +231,63 @@ const AdminArticleEditPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">Article Image</label>
-              {form.image_url ? (
-                <div className="mb-3">
-                  <img
-                    src={assetUrl(form.image_url)}
-                    alt="preview"
-                    className="rounded-lg max-h-64 border"
-                    data-testid="article-image-preview"
-                  />
-                </div>
-              ) : (
-                <div className="mb-3 flex items-center justify-center h-40 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-400">
-                  <ImageIcon size={32} />
-                </div>
-              )}
+              <label className="block text-sm font-semibold mb-2">
+                Article Images
+                <span className="ml-2 text-xs font-normal text-gray-500">
+                  (first image is the cover — add more to create a slideshow)
+                </span>
+              </label>
+              {(() => {
+                const gallery = form.images && form.images.length
+                  ? form.images
+                  : form.image_url
+                    ? [form.image_url]
+                    : [];
+                if (gallery.length === 0) {
+                  return (
+                    <div className="mb-3 flex items-center justify-center h-40 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-400">
+                      <ImageIcon size={32} />
+                    </div>
+                  );
+                }
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    {gallery.map((url, idx) => (
+                      <div
+                        key={url}
+                        className="relative group rounded-lg border bg-white overflow-hidden"
+                        data-testid={`article-gallery-item-${idx}`}
+                      >
+                        <img
+                          src={assetUrl(url)}
+                          alt={`Gallery ${idx + 1}`}
+                          className="w-full h-28 object-cover"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 bg-blue-700 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            COVER
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(url)}
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label="Remove image"
+                          data-testid={`remove-gallery-image-${idx}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               <div className="flex items-center gap-3">
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleImageUpload(e.target.files[0])}
+                  multiple
+                  onChange={(e) => handleImageUpload(Array.from(e.target.files || []))}
                   className="block text-sm"
                   data-testid="article-image-input"
                 />
@@ -216,6 +297,9 @@ const AdminArticleEditPage = () => {
                   </span>
                 )}
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Tip: Hold ⇧ / ctrl / cmd while selecting to upload multiple images at once.
+              </p>
             </div>
 
             <div className="flex items-center gap-6 flex-wrap">

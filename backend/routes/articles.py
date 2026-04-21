@@ -151,6 +151,10 @@ async def upload_article_image(article_id: str, file: UploadFile = File(...), _=
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
     
+    article = await db.articles.find_one({"id": article_id})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
     # Generate unique filename
     file_extension = file.filename.split(".")[-1]
     unique_filename = f"{uuid.uuid4()}.{file_extension}"
@@ -160,14 +164,40 @@ async def upload_article_image(article_id: str, file: UploadFile = File(...), _=
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # Update article with image URL
     image_url = f"/api/uploads/articles/{unique_filename}"
-    await db.articles.update_one(
-        {"id": article_id},
-        {"$set": {"image_url": image_url, "updated_at": datetime.utcnow()}}
-    )
-    
-    return {"image_url": image_url}
+
+    # Append to article's image gallery. The first image also becomes
+    # the cover (image_url) for backward-compatibility with article previews.
+    existing_images = list(article.get("images") or [])
+    if article.get("image_url") and article["image_url"] not in existing_images:
+        existing_images.insert(0, article["image_url"])
+    existing_images.append(image_url)
+
+    update = {"images": existing_images, "updated_at": datetime.utcnow()}
+    if not article.get("image_url"):
+        update["image_url"] = image_url
+
+    await db.articles.update_one({"id": article_id}, {"$set": update})
+
+    return {"image_url": image_url, "images": existing_images}
+
+
+@router.delete("/{article_id}/images")
+async def remove_article_image(article_id: str, image_url: str, _=Depends(require_permission("edit"))):
+    """Remove a specific image from an article's gallery. Pass ?image_url=..."""
+    article = await db.articles.find_one({"id": article_id})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    images = [u for u in (article.get("images") or []) if u != image_url]
+
+    update = {"images": images, "updated_at": datetime.utcnow()}
+    # If we removed the cover, promote the next image (or clear it)
+    if article.get("image_url") == image_url:
+        update["image_url"] = images[0] if images else None
+
+    await db.articles.update_one({"id": article_id}, {"$set": update})
+    return {"images": images, "image_url": update.get("image_url")}
 
 @router.post("/{article_id}/click")
 async def track_click(article_id: str, request: Request):
