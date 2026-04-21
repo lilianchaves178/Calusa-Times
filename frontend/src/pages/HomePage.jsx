@@ -1,5 +1,4 @@
 import React from 'react';
-import AnnouncementTicker from '../components/AnnouncementTicker';
 import Header from '../components/Header';
 import NewspaperHeader from '../components/NewspaperHeader';
 import ArticleCard from '../components/ArticleCard';
@@ -15,7 +14,6 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AnnouncementTicker />
       <Header />
       <NewspaperHeader />
 
