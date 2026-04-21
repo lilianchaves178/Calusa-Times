@@ -53,6 +53,8 @@ See `/app/memory/test_credentials.md`.
 - **Popups**: `GET /popups`. Admin: `GET /all`, `POST`, `PUT /{id}`, `PUT /{id}/deactivate`, `DELETE /{id}`
 - **Mural**: `GET /mural`, `POST /mural`, `GET /mural/config/pricing`. Admin: `GET /pending`, `PUT /{id}/approve`, `PUT /{id}/reject`, `DELETE /{id}`
 - **Contact**: `POST /contact` (public). Admin: `GET /contact?resolved=true|false`, `PUT /contact/{id}/resolve?resolved=bool`, `DELETE /contact/{id}`
+- **Subscribers**: `POST /subscribers` (public, idempotent), `POST /subscribers/unsubscribe`. Admin: `GET /subscribers?active_only=true|false`, `DELETE /subscribers/{id}`
+- **Print edition**: `GET /articles/print-edition?month=YYYY-MM` (public) → `{articles: [...with cached ai_summary], achievements: [...]}`
 - **Pexels**: `GET /pexels/search?q=...`, `POST /pexels/import` (body `{url, target}` where target ∈ `articles|spotlight|school|art|sponsors`)
 
 ## Test Coverage
@@ -102,6 +104,14 @@ See `/app/memory/test_credentials.md`.
 - 📰 **Public monthly newspaper download**: extracted printable render into reusable `components/PrintableNewspaper.jsx`. New public page `/print` uses the same 2-sheet gazette layout and public (approved-only) API endpoints. Supports `?month=YYYY-MM` and `?autoprint=1` for deep-linkable downloads. Homepage footer now sports a gold **"This Month's Newspaper"** button linking here.
 - 🧹 **Header decluttered**: removed the Submit and Admin buttons from the desktop header. Both CTAs (plus the new This-Month's-Newspaper link) now live in a new **three-column footer** (brand · CTAs · social/school links), with a copyright strip at the bottom. Mobile hamburger menu still carries Submit + Admin for small-screen users.
 - Files: `components/PrintableNewspaper.jsx` (new), `pages/PrintPage.jsx` (new public route), `components/Footer.jsx` (rewrite), `components/Header.jsx` (trim), `App.js` (add `/print` route).
+
+### Iteration 14 (Feb 23, 2026)
+- 🧠 **AI article summaries** — integrated Emergent LLM key (Claude Sonnet 4.5). New `backend/services/summarizer.py` with `summarize_article(title, body)` (3-4 sentences, ≤60 words, no hallucinations). Article model gained `ai_summary: Optional[str]`; new `GET /api/articles/print-edition?month=YYYY-MM` returns articles with cached summaries (generates on first read, then caches on the document).
+- 📄 **Printable newspaper redesign** — text-first: each story now renders its AI summary beside a smaller floated thumbnail (lead = 2.2in, column = 1.1in; text wraps). Layout is adaptive:
+  - ≤3 articles → **single sheet** (1 of 1) with achievements inlined at the bottom. No more orphaned page 2.
+  - \>3 articles → two sheets, achievements land on whichever page has room.
+- 📬 **Email subscriptions** — new `backend/routes/subscriptions.py` (`Subscriber` model, idempotent `POST /api/subscribers`, `POST /api/subscribers/unsubscribe`, admin list/delete) + Resend welcome email. Footer now has a pill-style email capture "Remind me when the new issue is out" with inline success state.
+- Files: `backend/services/summarizer.py`, `backend/routes/subscriptions.py`, `backend/models.py` (ai_summary), `backend/routes/articles.py` (print-edition), `backend/server.py` (wire), `frontend/src/components/PrintableNewspaper.jsx` (rewrite for adaptive layout + AI summary body), `frontend/src/pages/AdminPrintPage.css` (smaller floated thumbs), `frontend/src/pages/PrintPage.jsx` + `AdminPrintPage.jsx` (call `/print-edition`), `frontend/src/components/Footer.jsx` (subscribe form).
 
 ## Backlog
 ### P1

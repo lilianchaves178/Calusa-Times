@@ -16,6 +16,7 @@ class Article(BaseModel):
     featured: bool = False
     comments_enabled: bool = True
     approved: bool = False
+    ai_summary: Optional[str] = None
     views: int = 0
     clicks: int = 0
     date: datetime = Field(default_factory=datetime.utcnow)

@@ -4,6 +4,7 @@ from models import Article, ArticleCreate, ArticleUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
 from routes.auth import require_permission
 from services import email_service
+from services import summarizer
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -209,6 +210,54 @@ async def get_photos_of_the_week(limit: int = 8):
             used_urls.add(p["image_url"])
 
     return {"photos": photos}
+
+
+@router.get("/print-edition")
+async def get_print_edition(month: str):
+    """Return approved articles + active achievements for a YYYY-MM month, with
+    AI-generated summaries (cached on the article doc once generated)."""
+    try:
+        year_s, month_s = month.split("-", 1)
+        year, month_i = int(year_s), int(month_s)
+        if month_i < 1 or month_i > 12:
+            raise ValueError
+    except ValueError:
+        raise HTTPException(status_code=400, detail="month must be YYYY-MM")
+
+    start = datetime(year, month_i, 1)
+    end = datetime(year + (1 if month_i == 12 else 0), 1 if month_i == 12 else month_i + 1, 1)
+
+    articles_raw = await db.articles.find(
+        {"approved": True, "date": {"$gte": start, "$lt": end}},
+        {"_id": 0},
+    ).sort("date", -1).to_list(50)
+
+    out_articles = []
+    for a in articles_raw:
+        summary = a.get("ai_summary")
+        if not summary:
+            body = f"{a.get('description', '')}\n\n{a.get('content', '')}"
+            summary = await summarizer.summarize_article(a.get("title", ""), body)
+            if summary:
+                await db.articles.update_one(
+                    {"id": a["id"]}, {"$set": {"ai_summary": summary}}
+                )
+                a["ai_summary"] = summary
+        out_articles.append(a)
+
+    achievements = await db.achievements.find(
+        {"is_active": True, "created_at": {"$gte": start, "$lt": end}},
+        {"_id": 0},
+    ).sort([("order", 1), ("created_at", -1)]).to_list(50)
+
+    # Normalize dates to ISO so FastAPI serializes predictably
+    for coll in (out_articles, achievements):
+        for doc in coll:
+            for key in ("date", "created_at", "updated_at"):
+                if isinstance(doc.get(key), datetime):
+                    doc[key] = doc[key].isoformat()
+
+    return {"articles": out_articles, "achievements": achievements}
 
 
 @router.get("/{article_id}", response_model=Article)

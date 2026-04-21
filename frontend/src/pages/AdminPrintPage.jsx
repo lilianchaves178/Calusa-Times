@@ -37,28 +37,19 @@ const AdminPrintPage = () => {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([
-      api.get('/articles/admin/all').catch(() => ({ data: [] })),
-      api.get('/achievements', { params: { active_only: false, limit: 500 } }).catch(() => ({ data: [] })),
-    ]).then(([aRes, hRes]) => {
-      if (cancelled) return;
-      const inMonth = (iso) => {
-        if (!iso) return false;
-        const d = new Date(iso);
-        return d >= monthStart && d <= monthEnd;
-      };
-      setArticles(
-        (aRes.data || [])
-          .filter((a) => a.approved && inMonth(a.date))
-          .sort((a, b) => new Date(b.date) - new Date(a.date)),
-      );
-      setAchievements(
-        (hRes.data || []).filter((h) => h.is_active && inMonth(h.created_at || h.date)),
-      );
-      setLoading(false);
-    });
+    api
+      .get('/articles/print-edition', { params: { month: monthKey } })
+      .then((res) => {
+        if (cancelled) return;
+        setArticles(res.data?.articles || []);
+        setAchievements(res.data?.achievements || []);
+      })
+      .catch(() => {
+        if (!cancelled) { setArticles([]); setAchievements([]); }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [monthStart, monthEnd]);
+  }, [monthKey]);
 
   const monthLabel = `${MONTH_NAMES[monthStart.getMonth()]} ${monthStart.getFullYear()}`;
   const printableCount = articles.length + achievements.length;

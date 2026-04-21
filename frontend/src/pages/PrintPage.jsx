@@ -42,27 +42,19 @@ const PrintPage = () => {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    // Public endpoints — already filtered to approved/active items
-    Promise.all([
-      api.get('/articles').catch(() => ({ data: [] })),
-      api.get('/achievements', { params: { limit: 200 } }).catch(() => ({ data: [] })),
-    ]).then(([aRes, hRes]) => {
-      if (cancelled) return;
-      const inMonth = (iso) => {
-        if (!iso) return false;
-        const d = new Date(iso);
-        return d >= monthStart && d <= monthEnd;
-      };
-      setArticles(
-        (aRes.data || [])
-          .filter((a) => inMonth(a.date))
-          .sort((a, b) => new Date(b.date) - new Date(a.date)),
-      );
-      setAchievements((hRes.data || []).filter((h) => inMonth(h.created_at || h.date)));
-      setLoading(false);
-    });
+    api
+      .get('/articles/print-edition', { params: { month: monthKey } })
+      .then((res) => {
+        if (cancelled) return;
+        setArticles(res.data?.articles || []);
+        setAchievements(res.data?.achievements || []);
+      })
+      .catch(() => {
+        if (!cancelled) { setArticles([]); setAchievements([]); }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [monthStart, monthEnd]);
+  }, [monthKey]);
 
   // Auto-trigger print when accessed via the footer "download" link
   useEffect(() => {
