@@ -52,6 +52,7 @@ See `/app/memory/test_credentials.md`.
 - **Art**: `GET/POST /art`, `POST /art/{id}/upload-image`. Admin: `PUT /{id}/approve`, `PUT /{id}/feature`, `DELETE /{id}`, `GET /pending`
 - **Popups**: `GET /popups`. Admin: `GET /all`, `POST`, `PUT /{id}`, `PUT /{id}/deactivate`, `DELETE /{id}`
 - **Mural**: `GET /mural`, `POST /mural`, `GET /mural/config/pricing`. Admin: `GET /pending`, `PUT /{id}/approve`, `PUT /{id}/reject`, `DELETE /{id}`
+- **Pexels**: `GET /pexels/search?q=...`, `POST /pexels/import` (body `{url, target}` where target ∈ `articles|spotlight|school|art|sponsors`)
 
 ## Test Coverage
 - Backend: **49/49 pytest green** (`/app/backend/tests/backend_test.py`)
@@ -60,6 +61,16 @@ See `/app/memory/test_credentials.md`.
 ### Iteration 5 (Feb 21, 2026)
 - ⏲ **30-day Mural auto-expiry** enforced. On admin approval, `expires_at = now + 30 days`. Public `GET /api/mural` excludes expired messages by default; admins pass `?include_expired=true` to see them. New **`PUT /api/mural/{id}/extend?days=N`** (admin) to reset or extend a message's display window (defaults to 30). Admin Mural page now shows expiry date on each approved message with a **+30 days** button. `GET /api/mural/config/pricing` now returns `display_days` for frontend copy.
 - Backend: **55/55 pytest green** — includes 6 new expiry test cases.
+
+### Iteration 7 (Feb 22, 2026)
+- 🖼 **Pexels free-image search** integrated across all 4 image-upload surfaces:
+  - `/submit-story` (public SubmitStoryPage) — student picks a stock photo when they don't have their own picture.
+  - `/submit-art` (public SubmitArtPage) — art submission now accepts either a file OR a Pexels photo (file no longer required when a stock image is selected).
+  - `/spotlight` (public self-submit) — optional stock photo for the student's shine story.
+  - `/admin/articles/:id/edit` (AdminArticleEditPage) — picker renders next to the multi-file input; for existing articles, picked photos are appended to `images` via `PUT /articles/{id}`; for new articles, they are staged in-form.
+- Backend: new `/api/pexels/search` + `/api/pexels/import` proxy (API key never hits the browser). `ArtSubmissionCreate` and `SpotlightPublicSubmit` gained optional `image_url` for direct Pexels-import flows. `create_article` coerces `images=None → []` to handle old clients.
+- Frontend: `PexelsImagePicker.jsx` (portal-free modal, Enter-to-search, per-photo import, `target` prop selects uploads subfolder). No nested `<form>` (HTML-valid inside parent submission forms).
+- Tests: Pexels suite **12/12** green. 4/4 end-to-end submission flows verified with playwright. 0 hydration errors across consumer pages.
 
 ## Backlog
 ### P1
