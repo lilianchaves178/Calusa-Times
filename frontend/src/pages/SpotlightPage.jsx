@@ -95,38 +95,52 @@ const SpotlightPage = () => {
             {students.map((student) => (
               <div
                 key={student.id}
-                className="bg-[#0f1e42] rounded-2xl p-8 text-white relative overflow-hidden"
+                className="group relative rounded-2xl overflow-hidden bg-[#0f1e42] text-white shadow-lg flex flex-col min-h-[440px]"
                 data-testid={`spotlight-${student.id}`}
               >
-                <div className="absolute top-0 right-0 w-40 h-40 bg-[#1a2d5a] rounded-full opacity-30 -translate-y-10 translate-x-10"></div>
-                <div className="relative z-10">
-                  <div className="flex justify-center mb-6">
-                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFA500] p-1">
-                      <div className="w-full h-full rounded-full bg-[#0f1e42] flex items-center justify-center overflow-hidden">
-                        {student.image_url ? (
-                          <img
-                            src={assetUrl(student.image_url)}
-                            alt={student.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-4xl font-black text-[#FFD700]">
-                            {student.name.charAt(0)}
-                          </span>
-                        )}
-                      </div>
+                {/* Hero image */}
+                <div className="relative flex-1 min-h-[260px] overflow-hidden">
+                  {student.image_url ? (
+                    <img
+                      src={assetUrl(student.image_url)}
+                      alt={student.name}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700] to-[#FFA500] flex items-center justify-center">
+                      <span className="text-7xl font-black text-[#0f1e42]">
+                        {student.name.charAt(0)}
+                      </span>
                     </div>
+                  )}
+
+                  {/* Gold ribbon */}
+                  <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 bg-[#FFD700] text-[#0f1e42] text-[10px] font-black uppercase tracking-[0.18em] px-2.5 py-1 rounded-full shadow-md">
+                    <Quote size={11} />
+                    Spotlight
                   </div>
-                  <div className="text-center">
-                    <h3 className="text-xl font-black mb-1">{student.name}</h3>
+
+                  {/* Fade-to-dark overlay */}
+                  <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0f1e42] via-[#0f1e42]/80 to-transparent" />
+
+                  {/* Name + grade on lower image */}
+                  <div className="absolute bottom-3 left-4 right-4 z-10">
+                    <h3 className="text-2xl font-black leading-tight drop-shadow">
+                      {student.name}
+                    </h3>
                     {student.grade && (
-                      <p className="text-gray-300 text-sm mb-4">{student.grade}</p>
+                      <p className="text-[#FFD700] text-xs font-bold uppercase tracking-wider mt-0.5">
+                        {student.grade}
+                      </p>
                     )}
-                    <Quote className="text-[#FFD700] mx-auto mb-2" size={20} />
-                    <blockquote className="italic text-gray-200 text-sm leading-relaxed">
-                      "{student.quote}"
-                    </blockquote>
                   </div>
+                </div>
+
+                {/* Quote band */}
+                <div className="px-5 py-4 bg-[#0f1e42]">
+                  <blockquote className="italic text-gray-200 text-sm leading-snug">
+                    &ldquo;{student.quote}&rdquo;
+                  </blockquote>
                 </div>
               </div>
             ))}
