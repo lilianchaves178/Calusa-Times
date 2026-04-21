@@ -41,10 +41,10 @@ const MuralPage = () => {
           <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <MessageSquare size={32} className="text-yellow-300" />
-                <h1 className="text-4xl font-black text-white">Community Mural</h1>
+                <MessageSquare size={32} className="text-black" />
+                <h1 className="text-4xl font-black text-black">Community Mural</h1>
               </div>
-              <p className="text-yellow-100">
+              <p className="text-black/80">
                 A fun cork board where families can share messages, celebrations, and encouragement!
               </p>
             </div>
