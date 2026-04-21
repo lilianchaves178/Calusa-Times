@@ -14,6 +14,8 @@ import {
   Award,
   Info,
   Star,
+  Mail,
+  Printer,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -31,6 +33,7 @@ const AdminDashboard = () => {
     sponsors: '—',
     pendingMural: '—',
     activePopups: '—',
+    openContact: '—',
   });
 
   useEffect(() => {
@@ -45,7 +48,7 @@ const AdminDashboard = () => {
           return null;
         }
       };
-      const [articles, pendingArticles, pendingComments, users, pendingArt, sponsors, pendingMural, popups] =
+      const [articles, pendingArticles, pendingComments, users, pendingArt, sponsors, pendingMural, popups, openContact] =
         await Promise.all([
           safe(() => api.get('/articles/admin/all')),
           safe(() => api.get('/articles/pending')),
@@ -55,6 +58,7 @@ const AdminDashboard = () => {
           safe(() => api.get('/sponsors', { params: { active_only: false } })),
           safe(() => api.get('/mural/pending')),
           safe(() => api.get('/popups')),
+          safe(() => api.get('/contact', { params: { resolved: false } })),
         ]);
 
       setCounts({
@@ -66,6 +70,7 @@ const AdminDashboard = () => {
         sponsors: sponsors?.data?.length ?? '—',
         pendingMural: pendingMural?.data?.length ?? '—',
         activePopups: popups?.data?.length ?? '—',
+        openContact: openContact?.data?.length ?? '—',
       });
     };
     loadCounts();
@@ -178,6 +183,24 @@ const AdminDashboard = () => {
       link: '/admin/school-info',
       count: 'Edit',
       testId: 'section-school-info',
+    },
+    {
+      title: 'Contact Inbox',
+      icon: Mail,
+      description: 'Messages from the public Contact Us form',
+      color: 'bg-teal-600',
+      link: '/admin/contact',
+      count: `${counts.openContact} open`,
+      testId: 'section-contact',
+    },
+    {
+      title: 'Printable Edition',
+      icon: Printer,
+      description: 'Generate a one-sheet monthly newspaper PDF',
+      color: 'bg-slate-700',
+      link: '/admin/print',
+      count: 'Create',
+      testId: 'section-print',
     },
   ];
 

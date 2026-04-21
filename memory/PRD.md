@@ -52,6 +52,7 @@ See `/app/memory/test_credentials.md`.
 - **Art**: `GET/POST /art`, `POST /art/{id}/upload-image`. Admin: `PUT /{id}/approve`, `PUT /{id}/feature`, `DELETE /{id}`, `GET /pending`
 - **Popups**: `GET /popups`. Admin: `GET /all`, `POST`, `PUT /{id}`, `PUT /{id}/deactivate`, `DELETE /{id}`
 - **Mural**: `GET /mural`, `POST /mural`, `GET /mural/config/pricing`. Admin: `GET /pending`, `PUT /{id}/approve`, `PUT /{id}/reject`, `DELETE /{id}`
+- **Contact**: `POST /contact` (public). Admin: `GET /contact?resolved=true|false`, `PUT /contact/{id}/resolve?resolved=bool`, `DELETE /contact/{id}`
 - **Pexels**: `GET /pexels/search?q=...`, `POST /pexels/import` (body `{url, target}` where target ∈ `articles|spotlight|school|art|sponsors`)
 
 ## Test Coverage
@@ -91,6 +92,11 @@ See `/app/memory/test_credentials.md`.
 ### Iteration 11 (Feb 22, 2026)
 - 🐛 **Bug fix — achievement images 404'd**: `/api/uploads/achievements/*` route was missing in `routes/uploads.py`. Added `serve_achievement_image` handler; now `HTTP 200` everywhere the photos render (admin list, homepage widget, Photo of the Week, public Achievements page).
 - 🎨 **Photo of the Week now aspect-adaptive**: images no longer get cropped by `object-cover`. The slide now uses `object-contain` for the main photo and fills any letterbox gap with a blurred, darkened copy of the same image as a backdrop, so portrait uploads (like the STEM Award banner) and landscape photos both display fully and look polished.
+
+### Iteration 12 (Feb 22, 2026)
+- 📮 **Contact Us**: public page at `/contact` (form: name, email, subject, related-article dropdown, message), new backend `routes/contact.py` (model `ContactMessage` + `POST /api/contact` public + admin CRUD). Admin inbox at `/admin/contact` with **Open/Resolved/All** tabs, Reply (mailto), Mark resolved / Reopen, and Delete. New Resend email template `notify_new_contact`. Dashboard tile shows open-message count.
+- 🗞 **Printable monthly edition**: admin page at `/admin/print` with a month picker (defaults to current month). Renders a pair of 8.5×11 sheets styled as a true mini-gazette — masthead "The Calusa Times · {Month Year}", lead-article hero + two-column stories on page 1, continuation on page 2 with an "Achievements of the Month" strip. Uses `@page { size: Letter; margin: 0.5in; }` + `@media print` to produce a clean PDF when the admin hits **Print / Save as PDF**. Auto-truncates article bodies to avoid overflow. Dashboard tile links to it.
+- Files: `backend/routes/contact.py`, `services/email_service.py::notify_new_contact`, `frontend/src/pages/ContactPage.jsx`, `AdminContactPage.jsx`, `AdminPrintPage.jsx`, `AdminPrintPage.css`. Header nav gained a "Contact" link.
 
 ## Backlog
 ### P1

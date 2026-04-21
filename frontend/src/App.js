@@ -24,6 +24,9 @@ import AdminPopupEditPage from "./pages/AdminPopupEditPage";
 import AdminSpotlightPage from "./pages/AdminSpotlightPage";
 import AdminAchievementsPage from "./pages/AdminAchievementsPage";
 import AdminSchoolInfoPage from "./pages/AdminSchoolInfoPage";
+import AdminContactPage from "./pages/AdminContactPage";
+import AdminPrintPage from "./pages/AdminPrintPage";
+import ContactPage from "./pages/ContactPage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -56,6 +59,7 @@ function App() {
           <Route path="/sponsors" element={<SponsorsPage />} />
           <Route path="/mural" element={<MuralPage />} />
           <Route path="/post-message" element={<PostMessagePage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminLoginPage />} />
@@ -87,6 +91,8 @@ function App() {
           <Route path="/admin/spotlight" element={<Protected permission="edit"><AdminSpotlightPage /></Protected>} />
           <Route path="/admin/achievements" element={<Protected permission="edit"><AdminAchievementsPage /></Protected>} />
           <Route path="/admin/school-info" element={<Protected permission="edit"><AdminSchoolInfoPage /></Protected>} />
+          <Route path="/admin/contact" element={<Protected permission="edit"><AdminContactPage /></Protected>} />
+          <Route path="/admin/print" element={<Protected permission="edit"><AdminPrintPage /></Protected>} />
         </Routes>
       </BrowserRouter>
       <Toaster />

@@ -155,3 +155,24 @@ async def notify_new_spotlight(db, student: dict) -> None:
         f"<p>Review and approve it to feature them on the Spotlight page.</p>"
     )
     await _send_to(recipients, subject, _render_template(subject, body, "Review Spotlight", "/admin/spotlight"))
+
+
+async def notify_new_contact(db, message: dict) -> None:
+    if not is_enabled():
+        return
+    recipients = await _admin_emails(db)
+    subject = f"New Contact Us message: {message.get('subject', 'No subject')}"
+    article_line = ""
+    if message.get("article_title"):
+        article_line = f"<p><strong>Related article:</strong> {message['article_title']}</p>"
+    body = (
+        f"<p><strong>{message.get('name', 'Anonymous')}</strong> "
+        f"&lt;{message.get('email', '')}&gt; wrote:</p>"
+        f"{article_line}"
+        f"<blockquote style=\"border-left: 4px solid #0f1e42; padding: 8px 12px; color: #475569; margin: 12px 0; background: #eff6ff;\">"
+        f"{message.get('message', '')}"
+        f"</blockquote>"
+        f"<p>Reply directly to this sender at <a href=\"mailto:{message.get('email', '')}\">{message.get('email', '')}</a>, "
+        f"or manage the inbox in the admin dashboard.</p>"
+    )
+    await _send_to(recipients, subject, _render_template(subject, body, "Open Contact Inbox", "/admin/contact"))

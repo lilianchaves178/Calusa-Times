@@ -11,6 +11,7 @@ import {
   Palette,
   Sparkles,
   MessageSquare,
+  Mail,
   Menu,
   X,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const navItems = [
   { path: '/spotlight', label: 'Spotlight', icon: Users },
   { path: '/achievements', label: 'Achievements', icon: Trophy },
   { path: '/school-info', label: 'Info', icon: Info },
+  { path: '/contact', label: 'Contact', icon: Mail },
 ];
 
 const Header = () => {
