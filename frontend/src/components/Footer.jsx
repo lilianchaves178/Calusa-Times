@@ -36,7 +36,9 @@ const Footer = () => {
               Follow us
             </a>
             <a
-              href="#"
+              href="https://www.calusaschool.org"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-gray-300 hover:text-white transition-colors"
               data-testid="footer-school-website-link"
             >
