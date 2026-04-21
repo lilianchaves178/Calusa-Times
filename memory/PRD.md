@@ -98,6 +98,11 @@ See `/app/memory/test_credentials.md`.
 - 🗞 **Printable monthly edition**: admin page at `/admin/print` with a month picker (defaults to current month). Renders a pair of 8.5×11 sheets styled as a true mini-gazette — masthead "The Calusa Times · {Month Year}", lead-article hero + two-column stories on page 1, continuation on page 2 with an "Achievements of the Month" strip. Uses `@page { size: Letter; margin: 0.5in; }` + `@media print` to produce a clean PDF when the admin hits **Print / Save as PDF**. Auto-truncates article bodies to avoid overflow. Dashboard tile links to it.
 - Files: `backend/routes/contact.py`, `services/email_service.py::notify_new_contact`, `frontend/src/pages/ContactPage.jsx`, `AdminContactPage.jsx`, `AdminPrintPage.jsx`, `AdminPrintPage.css`. Header nav gained a "Contact" link.
 
+### Iteration 13 (Feb 22, 2026)
+- 📰 **Public monthly newspaper download**: extracted printable render into reusable `components/PrintableNewspaper.jsx`. New public page `/print` uses the same 2-sheet gazette layout and public (approved-only) API endpoints. Supports `?month=YYYY-MM` and `?autoprint=1` for deep-linkable downloads. Homepage footer now sports a gold **"This Month's Newspaper"** button linking here.
+- 🧹 **Header decluttered**: removed the Submit and Admin buttons from the desktop header. Both CTAs (plus the new This-Month's-Newspaper link) now live in a new **three-column footer** (brand · CTAs · social/school links), with a copyright strip at the bottom. Mobile hamburger menu still carries Submit + Admin for small-screen users.
+- Files: `components/PrintableNewspaper.jsx` (new), `pages/PrintPage.jsx` (new public route), `components/Footer.jsx` (rewrite), `components/Header.jsx` (trim), `App.js` (add `/print` route).
+
 ## Backlog
 ### P1
 - **Verify `calusaschool.org` domain in Resend** so notifications can reach every admin account (not just `lilian.chaves1@gmail.com`). Step-by-step: Resend Dashboard → Domains → Add Domain → add DNS TXT/MX records → update `SENDER_EMAIL` in `.env` to e.g. `news@calusaschool.org`.

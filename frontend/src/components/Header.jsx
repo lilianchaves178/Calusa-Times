@@ -75,28 +75,6 @@ const Header = () => {
             })}
           </nav>
 
-          {/* Desktop CTAs */}
-          <div className="hidden md:flex items-center gap-2 shrink-0">
-            <Link to="/submit-story">
-              <Button
-                className="bg-yellow-400 text-blue-900 hover:bg-yellow-500 font-semibold shadow-md text-xs py-2 px-3 h-8"
-                data-testid="header-submit-btn"
-              >
-                <Edit size={14} className="mr-1.5" />
-                Submit
-              </Button>
-            </Link>
-            <Link to="/admin">
-              <Button
-                className="bg-blue-900 text-white hover:bg-blue-800 font-semibold shadow-md text-xs py-2 px-3 h-8"
-                data-testid="header-admin-btn"
-              >
-                <Shield size={14} className="mr-1.5" />
-                Admin
-              </Button>
-            </Link>
-          </div>
-
           {/* Mobile/tablet hamburger */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>

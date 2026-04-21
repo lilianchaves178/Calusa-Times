@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Calendar, Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import api, { assetUrl } from '../lib/api';
+import PrintableNewspaper from '../components/PrintableNewspaper';
+import api from '../lib/api';
 import './AdminPrintPage.css';
 
 const MONTH_NAMES = [
@@ -14,8 +15,7 @@ const MONTH_NAMES = [
 const formatMonthKey = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-const today = new Date();
-const DEFAULT_MONTH = formatMonthKey(today);
+const DEFAULT_MONTH = formatMonthKey(new Date());
 
 const AdminPrintPage = () => {
   const navigate = useNavigate();
@@ -47,35 +47,22 @@ const AdminPrintPage = () => {
         const d = new Date(iso);
         return d >= monthStart && d <= monthEnd;
       };
-      const monthArticles = (aRes.data || [])
-        .filter((a) => a.approved && inMonth(a.date))
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
-      const monthAch = (hRes.data || [])
-        .filter((h) => h.is_active && inMonth(h.created_at || h.date));
-      setArticles(monthArticles);
-      setAchievements(monthAch);
+      setArticles(
+        (aRes.data || [])
+          .filter((a) => a.approved && inMonth(a.date))
+          .sort((a, b) => new Date(b.date) - new Date(a.date)),
+      );
+      setAchievements(
+        (hRes.data || []).filter((h) => h.is_active && inMonth(h.created_at || h.date)),
+      );
       setLoading(false);
     });
     return () => { cancelled = true; };
   }, [monthStart, monthEnd]);
 
   const monthLabel = `${MONTH_NAMES[monthStart.getMonth()]} ${monthStart.getFullYear()}`;
-
-  const frontArticles = articles.slice(0, 4);
-  const backArticles = articles.slice(4, 10);
-
-  const leadArticle = frontArticles[0];
-  const frontSecondary = frontArticles.slice(1);
-
-  const truncate = (s = '', n = 240) => {
-    const t = (s || '').replace(/\s+/g, ' ').trim();
-    if (t.length <= n) return t;
-    return t.slice(0, n).replace(/\s+\S*$/, '') + '…';
-  };
-
-  const handlePrint = () => window.print();
-
   const printableCount = articles.length + achievements.length;
+  const handlePrint = () => window.print();
 
   return (
     <div className="min-h-screen bg-gray-200">
@@ -144,113 +131,11 @@ const AdminPrintPage = () => {
           </Card>
         </div>
       ) : (
-        <div className="print-sheets">
-          {/* =========== FRONT PAGE =========== */}
-          <section className="print-sheet" data-testid="print-sheet-front">
-            <header className="paper-masthead">
-              <div className="paper-masthead-row">
-                <span>Vol. 7</span>
-                <span>{monthLabel}</span>
-                <span>Est. 2019</span>
-              </div>
-              <h1 className="paper-title">The Calusa Times</h1>
-              <p className="paper-tagline">Calusa Elementary School's Student Gazette</p>
-              <div className="paper-masthead-rule" />
-            </header>
-
-            {leadArticle && (
-              <article className="paper-lead" data-testid="print-lead-article">
-                <div className="paper-kicker">{(leadArticle.category || 'news').toUpperCase()}</div>
-                <h2 className="paper-lead-title">{leadArticle.title}</h2>
-                <p className="paper-byline">
-                  By {leadArticle.author}{leadArticle.grade ? `, ${leadArticle.grade}` : ''}
-                </p>
-                {leadArticle.image_url && (
-                  <img
-                    src={assetUrl(leadArticle.image_url)}
-                    alt={leadArticle.title}
-                    className="paper-lead-image"
-                  />
-                )}
-                <p className="paper-lead-body">
-                  {truncate(leadArticle.description + ' ' + (leadArticle.content || ''), 520)}
-                </p>
-              </article>
-            )}
-
-            {frontSecondary.length > 0 && (
-              <div className="paper-grid">
-                {frontSecondary.map((a) => (
-                  <article className="paper-column-story" key={a.id}>
-                    <div className="paper-kicker">{(a.category || 'news').toUpperCase()}</div>
-                    <h3 className="paper-story-title">{a.title}</h3>
-                    <p className="paper-byline">By {a.author}</p>
-                    {a.image_url && (
-                      <img
-                        src={assetUrl(a.image_url)}
-                        alt={a.title}
-                        className="paper-story-image"
-                      />
-                    )}
-                    <p className="paper-story-body">{truncate(a.description, 220)}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            <footer className="paper-footer">
-              <span>The Calusa Times · {monthLabel}</span>
-              <span>calusakidnews · Page 1</span>
-            </footer>
-          </section>
-
-          {/* =========== BACK PAGE =========== */}
-          <section className="print-sheet" data-testid="print-sheet-back">
-            <header className="paper-masthead-mini">
-              <h2>The Calusa Times · {monthLabel}</h2>
-              <span>Continued</span>
-            </header>
-
-            {backArticles.length > 0 && (
-              <div className="paper-grid">
-                {backArticles.map((a) => (
-                  <article className="paper-column-story" key={a.id}>
-                    <div className="paper-kicker">{(a.category || 'news').toUpperCase()}</div>
-                    <h3 className="paper-story-title">{a.title}</h3>
-                    <p className="paper-byline">By {a.author}</p>
-                    {a.image_url && (
-                      <img
-                        src={assetUrl(a.image_url)}
-                        alt={a.title}
-                        className="paper-story-image"
-                      />
-                    )}
-                    <p className="paper-story-body">{truncate(a.description, 220)}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {achievements.length > 0 && (
-              <section className="paper-achievements">
-                <h3 className="paper-section-heading">🏆 Achievements of the Month</h3>
-                <ul className="paper-achievements-list">
-                  {achievements.slice(0, 10).map((h) => (
-                    <li key={h.id}>
-                      <strong>{h.title}</strong> — {h.recipient}
-                      <span className="paper-chip">{h.category}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            <footer className="paper-footer">
-              <span>Written by Calusa Students · Student-powered since 2019</span>
-              <span>Page 2</span>
-            </footer>
-          </section>
-        </div>
+        <PrintableNewspaper
+          monthLabel={monthLabel}
+          articles={articles}
+          achievements={achievements}
+        />
       )}
     </div>
   );

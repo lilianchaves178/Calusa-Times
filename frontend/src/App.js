@@ -27,6 +27,7 @@ import AdminSchoolInfoPage from "./pages/AdminSchoolInfoPage";
 import AdminContactPage from "./pages/AdminContactPage";
 import AdminPrintPage from "./pages/AdminPrintPage";
 import ContactPage from "./pages/ContactPage";
+import PrintPage from "./pages/PrintPage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -60,6 +61,7 @@ function App() {
           <Route path="/mural" element={<MuralPage />} />
           <Route path="/post-message" element={<PostMessagePage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/print" element={<PrintPage />} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminLoginPage />} />
