@@ -29,7 +29,10 @@ const StudentArtPage = () => {
               <Palette size={32} className="text-purple-600" />
               <h1 className="text-4xl font-black text-gray-900">Student Art Gallery</h1>
             </div>
-            <p className="text-gray-600">Showcasing the amazing creativity of Calusa students!</p>
+            <p className="text-gray-600">
+              Showcasing the amazing creativity of Calusa students! Upload a picture of your
+              favorite art work or picture you took to share with our community.
+            </p>
           </div>
           <Link to="/submit-art">
             <Button
