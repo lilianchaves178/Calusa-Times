@@ -29,6 +29,11 @@ async def create_admin_user():
         "last_login": None,
     }
 
+    # Additional admin accounts that should always exist (e.g. for email delivery)
+    extra_admins = [
+        {"email": "lilian.chaves1@gmail.com", "full_name": "Lilian Chaves"},
+    ]
+
     await db.users.update_one(
         {"email": admin_user["email"]},
         {
@@ -53,6 +58,30 @@ async def create_admin_user():
         {"email": admin_user["email"], "created_at": None},
         {"$set": {"created_at": now}},
     )
+
+    # Upsert each extra admin — only role/permissions are enforced so existing
+    # passwords aren't overwritten on re-run.
+    for extra in extra_admins:
+        await db.users.update_one(
+            {"email": extra["email"]},
+            {
+                "$set": {
+                    "full_name": extra["full_name"],
+                    "role": "admin",
+                    "permissions": ROLE_PERMISSIONS["admin"],
+                    "is_active": True,
+                },
+                "$setOnInsert": {
+                    "id": extra.get("id", f"admin-{extra['email'].split('@')[0]}"),
+                    "email": extra["email"],
+                    "hashed_password": get_password_hash("Calusa2024!"),
+                    "created_at": now,
+                    "last_login": None,
+                },
+            },
+            upsert=True,
+        )
+
     print("Admin user ensured.")
     print("Email: admin@calusaschool.org")
     print("Password: Calusa2024!")

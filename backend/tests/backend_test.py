@@ -52,15 +52,36 @@ def auth_headers(admin_token):
 
 
 @pytest.fixture(scope="session")
-def viewer_user(session):
-    """Register a viewer user for 403 permission testing."""
+def viewer_user(session, auth_headers):
+    """Register a viewer user for 403 permission testing. Register now requires admin token."""
     email = f"TEST_viewer_{uuid.uuid4().hex[:8]}@calusaschool.org"
     password = "Viewer123!"
     r = session.post(f"{API}/auth/register", json={
         "email": email, "password": password,
         "full_name": "Test Viewer", "role": "viewer"
-    })
-    assert r.status_code == 200, f"Register failed: {r.text}"
+    }, headers=auth_headers)
+    assert r.status_code == 200, f"Register failed: {r.status_code} {r.text}"
+    data = r.json()
+    login = session.post(f"{API}/auth/login", json={"email": email, "password": password})
+    assert login.status_code == 200
+    return {
+        "id": data["id"],
+        "email": email,
+        "token": login.json()["access_token"],
+        "headers": {"Authorization": f"Bearer {login.json()['access_token']}"},
+    }
+
+
+@pytest.fixture(scope="session")
+def editor_user(session, auth_headers):
+    """Register an editor user for role-based permission testing."""
+    email = f"TEST_editor_{uuid.uuid4().hex[:8]}@calusaschool.org"
+    password = "Editor123!"
+    r = session.post(f"{API}/auth/register", json={
+        "email": email, "password": password,
+        "full_name": "Test Editor", "role": "editor"
+    }, headers=auth_headers)
+    assert r.status_code == 200, f"Editor register failed: {r.status_code} {r.text}"
     data = r.json()
     login = session.post(f"{API}/auth/login", json={"email": email, "password": password})
     assert login.status_code == 200
@@ -127,7 +148,7 @@ class TestUserManagement:
         r = session.post(f"{API}/auth/register", json={
             "email": email, "password": "Pass123!",
             "full_name": "Test User", "role": "editor"
-        })
+        }, headers=auth_headers)
         assert r.status_code == 200
         body = r.json()
         assert body["email"] == email
@@ -135,11 +156,34 @@ class TestUserManagement:
         assert "upload" in body["permissions"]
         session.delete(f"{API}/auth/users/{body['id']}", headers=auth_headers)
 
-    def test_register_duplicate_email(self, session):
+    def test_register_duplicate_email(self, session, auth_headers):
         r1 = session.post(f"{API}/auth/register", json={
             "email": ADMIN_EMAIL, "password": "x", "full_name": "x", "role": "viewer"
-        })
+        }, headers=auth_headers)
         assert r1.status_code == 400
+
+    def test_register_requires_admin_no_token(self, session):
+        # Iteration 4: register now requires manage_users permission.
+        r = session.post(f"{API}/auth/register", json={
+            "email": f"TEST_notok_{uuid.uuid4().hex[:6]}@x.com",
+            "password": "Pass123!", "full_name": "NoTok", "role": "viewer"
+        })
+        assert r.status_code in (401, 403), r.status_code
+
+    def test_register_viewer_forbidden(self, session, viewer_user):
+        r = session.post(f"{API}/auth/register", json={
+            "email": f"TEST_viewerforbid_{uuid.uuid4().hex[:6]}@x.com",
+            "password": "Pass123!", "full_name": "Forbid", "role": "viewer"
+        }, headers=viewer_user["headers"])
+        assert r.status_code == 403
+
+    def test_register_editor_forbidden(self, session, editor_user):
+        # editor does NOT have manage_users permission
+        r = session.post(f"{API}/auth/register", json={
+            "email": f"TEST_editorforbid_{uuid.uuid4().hex[:6]}@x.com",
+            "password": "Pass123!", "full_name": "Forbid", "role": "viewer"
+        }, headers=editor_user["headers"])
+        assert r.status_code == 403
 
     def test_list_users_requires_permission(self, session, viewer_user):
         r = session.get(f"{API}/auth/users", headers=viewer_user["headers"])
@@ -157,7 +201,7 @@ class TestUserManagement:
         email = f"TEST_role_{uuid.uuid4().hex[:8]}@calusaschool.org"
         created = session.post(f"{API}/auth/register", json={
             "email": email, "password": "Pass123!", "full_name": "Role Test", "role": "viewer"
-        }).json()
+        }, headers=auth_headers).json()
         uid = created["id"]
 
         r = session.put(f"{API}/auth/users/{uid}/role", params={"role": "editor"}, headers=auth_headers)
@@ -185,7 +229,7 @@ class TestUserManagement:
 class TestArticles:
     @pytest.fixture(scope="class")
     def article_id(self, session, auth_headers):
-        # POST /api/articles is PUBLIC (create remains open)
+        # POST /api/articles is PUBLIC (create remains open) - iteration 4: saved with approved=false
         r = session.post(f"{API}/articles", json={
             "category": "News", "title": "TEST Article",
             "description": "desc", "content": "content body",
@@ -196,17 +240,26 @@ class TestArticles:
         _assert_no_objectid(body)
         assert body["title"] == "TEST Article"
         assert body["views"] == 0
+        # iteration 4: new articles default approved=False
+        assert body.get("approved") is False, f"Expected approved=False, got {body.get('approved')}"
         aid = body["id"]
+        # Approve so existing tests that fetch article publicly keep working
+        ap = session.put(f"{API}/articles/{aid}/approve", headers=auth_headers)
+        assert ap.status_code == 200
+        assert ap.json()["approved"] is True
         yield aid
         # DELETE requires admin
         session.delete(f"{API}/articles/{aid}", headers=auth_headers)
 
     def test_list_articles_public(self, session, article_id):
+        # article_id has been approved via fixture
         r = requests.get(f"{API}/articles")
         assert r.status_code == 200
         data = r.json()
         _assert_no_objectid(data)
         assert any(a["id"] == article_id for a in data)
+        for a in data:
+            assert a.get("approved") is True, f"Public list leaked unapproved article: {a['id']}"
 
     def test_get_article_public_increments_views(self, session, article_id):
         r1 = requests.get(f"{API}/articles/{article_id}")
@@ -315,6 +368,111 @@ class TestArticles:
         assert d.status_code == 200
         r = requests.get(f"{API}/comments/{aid}")
         assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Iteration 4: Article approval workflow
+# ---------------------------------------------------------------------------
+class TestArticleApproval:
+    @pytest.fixture
+    def pending_article(self, session, auth_headers):
+        r = session.post(f"{API}/articles", json={
+            "category": "News", "title": f"TEST_Pending_{uuid.uuid4().hex[:6]}",
+            "description": "d", "content": "c", "author": "T",
+            "comments_enabled": True
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["approved"] is False
+        yield body
+        session.delete(f"{API}/articles/{body['id']}", headers=auth_headers)
+
+    def test_public_create_saves_approved_false(self, pending_article):
+        assert pending_article["approved"] is False
+        _assert_no_objectid(pending_article)
+
+    def test_public_list_excludes_unapproved(self, pending_article):
+        r = requests.get(f"{API}/articles")
+        assert r.status_code == 200
+        ids = [a["id"] for a in r.json()]
+        assert pending_article["id"] not in ids, "Public list leaked an unapproved article"
+
+    def test_public_get_unapproved_returns_404(self, pending_article):
+        r = requests.get(f"{API}/articles/{pending_article['id']}")
+        assert r.status_code == 404
+
+    def test_approved_only_false_flag(self, pending_article):
+        # Spec says flag SHOULD honor opt-in
+        r = requests.get(f"{API}/articles", params={"approved_only": "false"})
+        assert r.status_code == 200
+        ids = [a["id"] for a in r.json()]
+        assert pending_article["id"] in ids, (
+            "approved_only=false did not include the unapproved article - spec honors opt-in"
+        )
+
+    def test_pending_endpoint_requires_admin(self, pending_article, viewer_user, session, auth_headers):
+        r_no = requests.get(f"{API}/articles/pending")
+        assert r_no.status_code in (401, 403)
+        r_v = requests.get(f"{API}/articles/pending", headers=viewer_user["headers"])
+        assert r_v.status_code == 403
+        r = session.get(f"{API}/articles/pending", headers=auth_headers)
+        assert r.status_code == 200
+        data = r.json()
+        _assert_no_objectid(data)
+        assert any(a["id"] == pending_article["id"] for a in data)
+        for a in data:
+            assert a["approved"] is False
+
+    def test_admin_all_requires_admin(self, pending_article, viewer_user, session, auth_headers):
+        r_no = requests.get(f"{API}/articles/admin/all")
+        assert r_no.status_code in (401, 403)
+        r_v = requests.get(f"{API}/articles/admin/all", headers=viewer_user["headers"])
+        assert r_v.status_code == 403
+        r = session.get(f"{API}/articles/admin/all", headers=auth_headers)
+        assert r.status_code == 200
+        data = r.json()
+        _assert_no_objectid(data)
+        ids = [a["id"] for a in data]
+        assert pending_article["id"] in ids
+        # admin/all should include both approved and unapproved
+        statuses = {a["approved"] for a in data}
+        assert False in statuses  # pending exists
+
+    def test_approve_requires_admin_and_flips_visibility(self, pending_article, viewer_user, session, auth_headers):
+        aid = pending_article["id"]
+        r_no = requests.put(f"{API}/articles/{aid}/approve")
+        assert r_no.status_code in (401, 403)
+        r_v = requests.put(f"{API}/articles/{aid}/approve", headers=viewer_user["headers"])
+        assert r_v.status_code == 403
+
+        r = session.put(f"{API}/articles/{aid}/approve", headers=auth_headers)
+        assert r.status_code == 200
+        body = r.json()
+        _assert_no_objectid(body)
+        assert body["approved"] is True
+        assert body["id"] == aid
+
+        pub_list = requests.get(f"{API}/articles").json()
+        assert any(a["id"] == aid for a in pub_list)
+
+        pub_detail = requests.get(f"{API}/articles/{aid}")
+        assert pub_detail.status_code == 200
+        assert pub_detail.json()["approved"] is True
+
+    def test_round_trip_edit_unapproves(self, pending_article, session, auth_headers):
+        aid = pending_article["id"]
+        # First approve
+        session.put(f"{API}/articles/{aid}/approve", headers=auth_headers)
+        assert requests.get(f"{API}/articles/{aid}").status_code == 200
+        # Now edit with approved=false
+        r = session.put(f"{API}/articles/{aid}", json={"approved": False}, headers=auth_headers)
+        assert r.status_code == 200
+        assert r.json()["approved"] is False
+        # Public detail -> 404
+        assert requests.get(f"{API}/articles/{aid}").status_code == 404
+        # Public list excludes
+        ids = [a["id"] for a in requests.get(f"{API}/articles").json()]
+        assert aid not in ids
 
 
 # ---------------------------------------------------------------------------
@@ -635,6 +793,48 @@ class TestMural:
         assert r.status_code == 200
         assert r.json()["tier"] == "plain"
         assert r.json()["price"] == 3
+        session.delete(f"{API}/mural/{r.json()['id']}", headers=auth_headers)
+
+
+# ---------------------------------------------------------------------------
+# Iteration 4: Email side-effect must never break creation
+# (Resend may silently fail; creates MUST still return 200/201)
+# ---------------------------------------------------------------------------
+class TestEmailSilentFail:
+    def test_article_create_returns_success_regardless_of_email(self, session, auth_headers):
+        r = requests.post(f"{API}/articles", json={
+            "category": "News", "title": f"TEST_EmailSilent_{uuid.uuid4().hex[:6]}",
+            "description": "d", "content": "c", "author": "T", "comments_enabled": True
+        })
+        assert r.status_code == 200, r.text
+        session.delete(f"{API}/articles/{r.json()['id']}", headers=auth_headers)
+
+    def test_comment_create_returns_success_regardless_of_email(self, session, auth_headers):
+        # Need an article with comments_enabled
+        a = session.post(f"{API}/articles", json={
+            "category": "X", "title": f"TEST_EmailComment_{uuid.uuid4().hex[:6]}",
+            "description": "d", "content": "c", "author": "A", "comments_enabled": True
+        }).json()
+        c = requests.post(f"{API}/comments", json={
+            "article_id": a["id"], "author_name": "P", "content": "hello"
+        })
+        assert c.status_code == 200, c.text
+        session.delete(f"{API}/articles/{a['id']}", headers=auth_headers)
+
+    def test_art_create_returns_success_regardless_of_email(self, session, auth_headers):
+        r = requests.post(f"{API}/art", json={
+            "title": f"TEST_EmailArt_{uuid.uuid4().hex[:6]}",
+            "artist_name": "Kid", "grade": "3rd", "description": "d"
+        })
+        assert r.status_code == 200, r.text
+        session.delete(f"{API}/art/{r.json()['id']}", headers=auth_headers)
+
+    def test_mural_create_returns_success_regardless_of_email(self, session, auth_headers):
+        r = requests.post(f"{API}/mural", json={
+            "message": f"TEST_EmailMural_{uuid.uuid4().hex[:6]}",
+            "author_name": "Parent", "tier": "plain"
+        })
+        assert r.status_code == 200, r.text
         session.delete(f"{API}/mural/{r.json()['id']}", headers=auth_headers)
 
 

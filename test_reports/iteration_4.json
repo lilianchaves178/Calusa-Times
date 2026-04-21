@@ -1,0 +1,32 @@
+{
+  "summary": "Backend-only regression + new-feature test of iteration-4 changes for The Calusa Times. All 49/49 pytest tests pass. Covered: (1) /api/auth/register now requires admin token with manage_users permission (verified 401/403 without token, 403 for viewer + editor tokens, 200 for admin); (2) new Article approval workflow end-to-end (public POST saves approved=false, public GET /articles hides unapproved, public GET /articles/{id} returns 404 for unapproved, admin /pending + /admin/all + /{id}/approve all guarded and working, approved_only=false opt-in honored, round-trip edit setting approved=false hides article from public); (3) Email side-effect via Resend is correctly fire-and-forget - article/comment/art/mural creates all return 200 regardless of Resend status; (4) no MongoDB _id leaked in any new response (/pending, /admin/all, /approve). Mural Givebacks pricing regression confirmed ({plain:3, featured:5} + valid givebacks_url). Iteration-2 admin-guard regressions all still green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: purge lingering TEST_*-prefixed records left over from earlier iterations' frontend runs (TEST_Frontend_Article, TEST_Sponsor_FE, TEST_editor_fe@example.com user, TEST_FE_Parent3 mural message). None affect current test outcomes."
+  ],
+  "critical_code_review_comments": [
+    "routes/articles.py correctly routes /pending and /admin/all BEFORE /{article_id} so FastAPI doesn't match them as path params - good ordering.",
+    "GET /api/articles supports approved_only=True (default) and the opt-in flag approved_only=false - spec honored.",
+    "PUT /api/articles/{id}/approve and /pending + /admin/all all gated by require_permission('edit'); viewer role correctly 403s, admin 200s. Editor role would also pass these (has 'edit') which matches intent.",
+    "POST /api/articles is intentionally public and always sets approved=False via the Article default - verified. Admin creating via UI must call POST + /approve as documented.",
+    "PUT /api/articles/{id} accepts {approved: false} and round-trip hides article from public view - verified.",
+    "email_service.fire_and_forget wraps Resend calls; endpoints return success even if RESEND_API_KEY invalid/mismatched - verified for articles, comments, art, mural.",
+    "All new endpoints project out {_id:0} so no ObjectId leakage. Recursive _assert_no_objectid in tests validates nested payloads too.",
+    "auth.py/register now Depends(require_permission('manage_users')) - enforced; viewer & editor correctly 403, no-token 403 (HTTPBearer rejection)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "100% (49/49)", "frontend": "not tested this iteration (backend-only request)"},
+  "test_credentials": "admin@calusaschool.org / Calusa2024! (per /app/memory/test_credentials.md). Second admin lilian.chaves1@gmail.com / Calusa2024! present for Resend delivery but not required by tests.",
+  "seed_data_creation": "Tests create TEST_* prefixed articles/comments/art/mural/users per-test and clean them up via admin DELETE in fixtures/teardown. Viewer and editor test users are registered each session and left behind (prefixed TEST_viewer_* / TEST_editor_*). One TEST Cascade article->comment is created then deleted in TestArticles.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "backend_test.py now has 49 tests covering iteration 1-4. Fixtures: viewer_user + editor_user both require admin token to register (iteration 4 change). TestArticles fixture now approves its article post-create so existing public-GET regressions keep working; new TestArticleApproval class exercises the full pending/approve flow. TestEmailSilentFail validates that Resend misconfiguration never breaks creates. If running again, just `pytest /app/backend/tests/backend_test.py -v`.",
+  "rca of the issue": "No bugs. All iteration-4 requirements pass: register permission tightening, article approval state machine, email silent-fail, mural pricing regression, no _id leaks."
+}
