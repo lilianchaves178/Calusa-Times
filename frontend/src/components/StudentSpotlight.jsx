@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import api, { assetUrl } from '../lib/api';
 
 const StudentSpotlight = () => {
@@ -15,7 +15,7 @@ const StudentSpotlight = () => {
 
   if (!spotlight) {
     return (
-      <div className="bg-[#0f1e42] rounded-2xl p-6 text-white relative overflow-hidden h-full flex flex-col items-center justify-center text-center">
+      <div className="bg-[#0f1e42] rounded-2xl p-6 text-white h-full flex flex-col items-center justify-center text-center min-h-[360px]">
         <p className="text-[#FFD700] text-sm uppercase tracking-wider font-semibold mb-2">
           Student Spotlight
         </p>
@@ -25,49 +25,60 @@ const StudentSpotlight = () => {
   }
 
   return (
-    <div className="bg-[#0f1e42] rounded-2xl p-6 text-white relative overflow-hidden h-full flex flex-col">
-      <div className="absolute top-4 right-4 w-32 h-32 bg-[#1a2d5a] rounded-full opacity-30"></div>
-      <div className="absolute bottom-4 left-4 w-24 h-24 bg-[#1a2d5a] rounded-full opacity-30"></div>
-
-      <div className="relative z-10 flex-1 flex flex-col">
-        <div className="text-center mb-6">
-          <p className="text-[#FFD700] text-sm uppercase tracking-wider font-semibold mb-2">Student</p>
-          <p className="text-[#FFD700] text-sm uppercase tracking-wider font-semibold">Spotlight</p>
-        </div>
-
-        <div className="flex justify-center mb-6">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFA500] p-1">
-            <div className="w-full h-full rounded-full bg-[#0f1e42] flex items-center justify-center overflow-hidden">
-              {spotlight.image_url ? (
-                <img
-                  src={assetUrl(spotlight.image_url)}
-                  alt={spotlight.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-5xl font-black text-[#FFD700]">
-                  {spotlight.name.charAt(0)}
-                </span>
-              )}
-            </div>
+    <div
+      className="group relative rounded-2xl overflow-hidden h-full min-h-[480px] bg-[#0f1e42] text-white flex flex-col shadow-lg"
+      data-testid="student-spotlight-card"
+    >
+      {/* HERO IMAGE — top 65% of the card */}
+      <div className="relative flex-1 min-h-[280px] overflow-hidden">
+        {spotlight.image_url ? (
+          <img
+            src={assetUrl(spotlight.image_url)}
+            alt={spotlight.name}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700] to-[#FFA500] flex items-center justify-center">
+            <span className="text-7xl font-black text-[#0f1e42]">
+              {spotlight.name.charAt(0)}
+            </span>
           </div>
+        )}
+
+        {/* Gold ribbon top-left */}
+        <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 bg-[#FFD700] text-[#0f1e42] text-[10px] font-black uppercase tracking-[0.18em] px-2.5 py-1 rounded-full shadow-md">
+          <Sparkles size={12} />
+          Student Spotlight
         </div>
 
-        <div className="text-center flex-1 flex flex-col justify-center">
-          <h3 className="text-2xl font-black mb-1">{spotlight.name}</h3>
-          <p className="text-gray-300 text-sm mb-4">{spotlight.grade}</p>
-          <blockquote className="italic text-gray-200 text-sm leading-relaxed">
-            "{spotlight.quote}"
-          </blockquote>
-        </div>
+        {/* Gradient overlay so the name/quote can sit on top of the image */}
+        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0f1e42] via-[#0f1e42]/80 to-transparent" />
 
+        {/* Name + grade overlaid on the lower portion of the image */}
+        <div className="absolute bottom-3 left-4 right-4 z-10">
+          <h3 className="text-2xl md:text-3xl font-black leading-tight drop-shadow">
+            {spotlight.name}
+          </h3>
+          {spotlight.grade && (
+            <p className="text-[#FFD700] text-xs font-bold uppercase tracking-wider mt-0.5">
+              {spotlight.grade}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* QUOTE + CTA — compact dark band */}
+      <div className="px-4 py-4 bg-[#0f1e42]">
+        <blockquote className="italic text-gray-200 text-sm leading-snug mb-3 line-clamp-3">
+          &ldquo;{spotlight.quote}&rdquo;
+        </blockquote>
         <Link
           to="/spotlight"
-          className="mt-6 inline-flex items-center gap-2 bg-white text-[#0f1e42] px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors w-full justify-center"
+          className="inline-flex items-center justify-center gap-2 bg-[#FFD700] text-[#0f1e42] px-4 py-2 rounded-lg font-bold text-sm hover:bg-yellow-400 transition-colors w-full"
           data-testid="meet-more-stars-btn"
         >
           Meet More Stars
-          <ArrowRight size={18} />
+          <ArrowRight size={16} />
         </Link>
       </div>
     </div>
