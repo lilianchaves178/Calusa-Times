@@ -88,6 +88,10 @@ See `/app/memory/test_credentials.md`.
 - Frontend: `PhotoOfTheWeek.jsx` rewritten to render `source`-specific chips + icons (Newspaper / Trophy / Palette / Sparkles). Testids `potw-chip-article|achievement|art|spotlight` for easy QA.
 - Smoke-tested: `{'achievement': 1, 'spotlight': 2, 'art': 1, 'article': 3}` returned by the API; playwright cycling confirmed all four chip types render.
 
+### Iteration 11 (Feb 22, 2026)
+- 🐛 **Bug fix — achievement images 404'd**: `/api/uploads/achievements/*` route was missing in `routes/uploads.py`. Added `serve_achievement_image` handler; now `HTTP 200` everywhere the photos render (admin list, homepage widget, Photo of the Week, public Achievements page).
+- 🎨 **Photo of the Week now aspect-adaptive**: images no longer get cropped by `object-cover`. The slide now uses `object-contain` for the main photo and fills any letterbox gap with a blurred, darkened copy of the same image as a backdrop, so portrait uploads (like the STEM Award banner) and landscape photos both display fully and look polished.
+
 ## Backlog
 ### P1
 - **Verify `calusaschool.org` domain in Resend** so notifications can reach every admin account (not just `lilian.chaves1@gmail.com`). Step-by-step: Resend Dashboard → Domains → Add Domain → add DNS TXT/MX records → update `SENDER_EMAIL` in `.env` to e.g. `news@calusaschool.org`.

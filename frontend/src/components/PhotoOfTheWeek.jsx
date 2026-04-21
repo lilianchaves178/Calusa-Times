@@ -75,11 +75,21 @@ const PhotoOfTheWeek = () => {
         className="group block relative overflow-hidden rounded-2xl border-4 border-[#0f1e42] bg-black shadow-lg"
         data-testid="photo-of-the-week-link"
       >
-        <div className="aspect-[16/7] w-full">
+        <div className="relative aspect-[16/7] w-full overflow-hidden">
+          {/* Blurred backdrop fills any letterbox gap with the same photo */}
+          <img
+            src={assetUrl(current.image_url)}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60"
+            key={`bg-${current.image_url}`}
+          />
+          <div className="absolute inset-0 bg-black/30" />
+          {/* Main photo — fully visible, no crop */}
           <img
             src={assetUrl(current.image_url)}
             alt={current.title}
-            className="w-full h-full object-cover transition-transform duration-[6000ms] ease-out group-hover:scale-105"
+            className="relative w-full h-full object-contain transition-transform duration-[6000ms] ease-out group-hover:scale-[1.03]"
             key={current.image_url}
           />
         </div>
