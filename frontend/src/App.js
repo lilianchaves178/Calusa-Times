@@ -9,6 +9,8 @@ import AchievementsPage from "./pages/AchievementsPage";
 import SchoolInfoPage from "./pages/SchoolInfoPage";
 import SubmitStoryPage from "./pages/SubmitStoryPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminArticlesPage from "./pages/AdminArticlesPage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -36,6 +38,8 @@ function App() {
           <Route path="/mural" element={<MuralPage />} />
           <Route path="/post-message" element={<PostMessagePage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/articles" element={<AdminArticlesPage />} />
         </Routes>
       </BrowserRouter>
       <Toaster />
