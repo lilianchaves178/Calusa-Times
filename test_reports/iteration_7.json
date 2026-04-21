@@ -1,0 +1,45 @@
+{
+  "summary": "Iteration 7 retest after iter-6 blocker fixes. BOTH fixes verified end-to-end. (1) Backend: POST /api/articles with omitted 'images' now returns 200 and persists images=[]; with supplied images array it still persists the list (curl + pytest). (2) Frontend: PexelsImagePicker no longer nests a <form> - zero 'form cannot be a descendant of form' console errors across SubmitStoryPage, SubmitArtPage, SpotlightPage (self-submit), AdminArticleNewPage and AdminArticleEditPage. Parent-form inputs retain their typed values after the picker opens, searches, imports and closes. Full flows green: SubmitStory -> 200 /articles -> navigates to /articles; SubmitArt -> 200 /art -> /student-art; Spotlight self-submit -> 200 /spotlight/submit -> 'You're in the queue!'; Admin article edit Pexels pick -> 200 /pexels/import + 200 PUT /articles/{id} appends to images gallery (verified via admin/all re-fetch).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/articles/upload-image", "issue": "Anonymous upload returns 200 (no auth). Main agent confirmed this is intentional to support public Submit Story. Update existing regression test test_standalone_image_upload_admin to expect 200 (or split into 'public' vs 'admin' contract) so the suite is green."},
+      {"endpoint": "POST /api/mural", "issue": "TestMural::test_mural_flow_with_admin_guards fails with 409 on second row/col combination - seeded plot occupies the chosen cell. Pre-existing, unrelated to this iteration; randomise plot coordinates in the test."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All pages", "issues": ["Global popup 'Spring Art Show - April 21st!' overlays the Pexels trigger button and other primary CTAs on first load for anonymous visitors - clicking the picker button without first dismissing the popup is blocked. Consider lower z-index or auto-dismiss after first render, or ensure the popup never blocks form interactive elements."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pexels.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results_iter7_pexels.xml",
+    "/app/test_reports/pytest/pytest_results_iter7_regression.xml"
+  ],
+  "action_items": [
+    "(Optional) Update backend_test.TestArticles::test_standalone_image_upload_admin to reflect the now-public contract (expect 200) or add an explicit endpoint gate.",
+    "(Optional) Make TestMural::test_mural_flow_with_admin_guards pick a free plot to avoid 409 from seeded plots.",
+    "(Optional UX) Ensure the promo popup does not overlay submit forms & Pexels trigger on first load (popup currently intercepts pointer events until 'Got it!' is clicked)."
+  ],
+  "critical_code_review_comments": [
+    "routes/articles.py create_article now coerces None -> [] before Article(**...). Cleaner long-term fix: set default_factory=list on ArticleCreate.images (and drop Optional), matching Article.images, so the coercion is unnecessary and GET/POST schemas stay symmetric.",
+    "routes/pexels.py import_pexels_image still does not whitelist content-type extensions (image/svg+xml would create .svg+xml). Low risk because Pexels serves JPEGs, but add an allow-list {jpg,jpeg,png,gif,webp}.",
+    "PexelsImagePicker.jsx now uses onClick + onKeyDown(Enter) on the search Input/Button (no inner <form>). Confirmed zero hydration errors inside the 4 parent <form> contexts.",
+    "AdminArticleEditPage route is /admin/articles/:id/edit (not /admin/articles/:id) - review_request text had a minor typo; picker wiring itself is correct."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "Pexels suite 12/12 (100%). Regression suite 53/55 (96.4%) - 2 pre-existing test contract mismatches, no regression introduced by fixes.",
+    "frontend": "4/4 Pexels-consumer surfaces pass end-to-end (SubmitStory, SubmitArt, Spotlight self-submit, Admin article edit). 0 nested-form errors."
+  },
+  "test_credentials": "admin@calusaschool.org / Calusa2024!",
+  "seed_data_creation": "Created and cleaned up TEST_iter7 article, art submission and spotlight submission via mongo delete_many. Admin article e604d1c7... had one Pexels image appended for edit-flow verification - kept intentionally (non-destructive).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Both iter-6 blockers are fixed and verified. If new features touch article submission or the Pexels picker, re-run /app/backend/tests/test_pexels.py and the playwright flows in this report. Picker data-testids stable: open-pexels-picker-btn, pexels-picker-modal, pexels-search-input, pexels-search-submit, pexels-photo-{id}. Admin edit route is /admin/articles/:id/edit. Remember to dismiss the 'Spring Art Show' popup ('button:has-text(Got it)') before interacting with submit forms in playwright.",
+  "rca of the issue": "Both root causes from iter-6 are resolved: (A) routes/articles.py line 85-86 coerces images=None -> [] before Article(**dict) so Pydantic no longer rejects the None. Happy path (no images) + with-images persistence both return 200 and correct payload. (B) PexelsImagePicker.jsx replaced the inner <form onSubmit={search}> with a <div> whose Input has onKeyDown(Enter) and whose Button has onClick={search}, eliminating the nested-form hydration error; parent form subtree is no longer re-mounted on picker open, so typed values in SubmitStoryPage/SubmitArtPage/SpotlightPage/AdminArticleEditPage survive."
+}

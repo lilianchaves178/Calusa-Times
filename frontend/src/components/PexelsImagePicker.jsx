@@ -23,8 +23,7 @@ const PexelsImagePicker = ({ target = 'articles', onImported, triggerLabel = 'Br
   const [photos, setPhotos] = useState([]);
   const [total, setTotal] = useState(0);
 
-  const search = async (e) => {
-    if (e) e.preventDefault();
+  const search = async () => {
     if (!q.trim()) return;
     setLoading(true);
     try {
@@ -106,7 +105,7 @@ const PexelsImagePicker = ({ target = 'articles', onImported, triggerLabel = 'Br
               </button>
             </div>
 
-            <form onSubmit={search} className="px-5 py-3 border-b flex gap-2">
+            <div className="px-5 py-3 border-b flex gap-2">
               <div className="relative flex-1">
                 <Search
                   size={16}
@@ -115,6 +114,12 @@ const PexelsImagePicker = ({ target = 'articles', onImported, triggerLabel = 'Br
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      search();
+                    }
+                  }}
                   placeholder="Try: school kids, science class, soccer, art, flowers…"
                   className="pl-9"
                   autoFocus
@@ -122,14 +127,15 @@ const PexelsImagePicker = ({ target = 'articles', onImported, triggerLabel = 'Br
                 />
               </div>
               <Button
-                type="submit"
+                type="button"
+                onClick={search}
                 disabled={loading || !q.trim()}
                 className="bg-blue-700 hover:bg-blue-800 text-white"
                 data-testid="pexels-search-submit"
               >
                 {loading ? 'Searching…' : 'Search'}
               </Button>
-            </form>
+            </div>
 
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
               {loading ? (

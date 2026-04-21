@@ -82,6 +82,8 @@ async def get_article(article_id: str, request: Request):
 @router.post("", response_model=Article)
 async def create_article(article: ArticleCreate):
     article_dict = article.dict()
+    if article_dict.get("images") is None:
+        article_dict["images"] = []
     article_obj = Article(**article_dict)
     await db.articles.insert_one(article_obj.dict())
     # Fire off admin email notification (no-op if RESEND_API_KEY is unset)
