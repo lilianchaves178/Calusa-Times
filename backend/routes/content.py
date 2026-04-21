@@ -194,6 +194,7 @@ class Achievement(BaseModel):
     recipient: str
     category: str  # ACADEMIC, SPORTS, LEADERSHIP, ARTS, ATTENDANCE, STEM
     description: Optional[str] = None
+    image_url: Optional[str] = None
     date: Optional[datetime] = Field(default_factory=datetime.utcnow)
     order: int = 0
     is_active: bool = True
@@ -205,6 +206,7 @@ class AchievementCreate(BaseModel):
     recipient: str
     category: str
     description: Optional[str] = None
+    image_url: Optional[str] = None
     order: int = 0
     is_active: bool = True
 
@@ -214,6 +216,7 @@ class AchievementUpdate(BaseModel):
     recipient: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
+    image_url: Optional[str] = None
     order: Optional[int] = None
     is_active: Optional[bool] = None
 
@@ -250,6 +253,29 @@ async def delete_achievement(aid: str, _=Depends(require_permission("delete"))):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
     return {"message": "Deleted"}
+
+
+@achievements_router.post("/{aid}/upload-image")
+async def upload_achievement_image(
+    aid: str,
+    file: UploadFile = File(...),
+    _=Depends(require_permission("edit")),
+):
+    existing = await db.achievements.find_one({"id": aid})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Achievement not found")
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    ext = (file.filename.split(".")[-1] or "jpg").lower()
+    unique = f"{uuid.uuid4()}.{ext}"
+    out_dir = Path("/app/uploads/achievements")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / unique
+    with open(out, "wb") as buf:
+        shutil.copyfileobj(file.file, buf)
+    image_url = f"/api/uploads/achievements/{unique}"
+    await db.achievements.update_one({"id": aid}, {"$set": {"image_url": image_url}})
+    return {"image_url": image_url}
 
 
 # =============================================================================

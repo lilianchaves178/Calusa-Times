@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Trophy } from 'lucide-react';
-import api from '../lib/api';
+import api, { assetUrl } from '../lib/api';
 
 const AchievementCard = ({ achievement }) => (
   <div className="bg-white rounded-xl border-2 border-gray-200 p-4 flex items-start gap-3 transition-all hover:shadow-md hover:border-[#FFD700]">
-    <div className="w-10 h-10 bg-[#FFD700] rounded-full flex items-center justify-center flex-shrink-0">
-      <Trophy size={20} className="text-[#0f1e42]" />
-    </div>
+    {achievement.image_url ? (
+      <img
+        src={assetUrl(achievement.image_url)}
+        alt={achievement.title}
+        className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-[#FFD700]"
+      />
+    ) : (
+      <div className="w-10 h-10 bg-[#FFD700] rounded-full flex items-center justify-center flex-shrink-0">
+        <Trophy size={20} className="text-[#0f1e42]" />
+      </div>
+    )}
     <div className="flex-1 min-w-0">
       <h4 className="font-bold text-[#0f1e42] text-sm mb-1 leading-tight">{achievement.title}</h4>
       <p className="text-gray-600 text-xs mb-2">{achievement.recipient}</p>

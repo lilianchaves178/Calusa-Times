@@ -77,6 +77,11 @@ See `/app/memory/test_credentials.md`.
 - Backend: `GET /api/articles/photos-of-the-week?limit=8` returns `{photos: [{article_id, title, author, category, image_url, date}]}`. Route registered before `/{article_id}` to avoid path collision.
 - Frontend: `components/PhotoOfTheWeek.jsx` — gracefully hides when no photos exist; keyboard-accessible nav arrows on hover; progress dots with active-slide highlight.
 
+### Iteration 9 (Feb 22, 2026)
+- 🏆 **Achievement pictures** — admins can now attach a real photo (upload OR Pexels) to each achievement instead of the generic trophy icon. Backend: `Achievement.image_url: Optional[str]` on model/create/update + new `POST /api/achievements/{aid}/upload-image` (admin-only). Pexels importer now accepts `target=achievements` which lands files in `/app/uploads/achievements/`.
+- Frontend (`AdminAchievementsPage.jsx`): new "Picture (optional)" block in the edit form with file input, Pexels "Browse free images" button, live preview, and a small × to remove. Row list swaps the trophy disc for a 56px thumbnail when an image is set. Homepage `AchievementsSection` uses a circular photo avatar when present; `AchievementsPage` renders a 16:10 hero image at the top of the card when present and collapses the ribbon slot.
+- Verified end-to-end via curl (create + file upload + Pexels import) and UI screenshot of the admin form. Falls back to the ribbon icon whenever `image_url` is empty, so existing rows without photos are unaffected.
+
 ## Backlog
 ### P1
 - **Verify `calusaschool.org` domain in Resend** so notifications can reach every admin account (not just `lilian.chaves1@gmail.com`). Step-by-step: Resend Dashboard → Domains → Add Domain → add DNS TXT/MX records → update `SENDER_EMAIL` in `.env` to e.g. `news@calusaschool.org`.

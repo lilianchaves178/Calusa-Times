@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Trophy, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Trophy, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { useToast } from '../hooks/use-toast';
-import api from '../lib/api';
+import api, { assetUrl } from '../lib/api';
+import PexelsImagePicker from '../components/PexelsImagePicker';
 
 const CATEGORIES = ['ACADEMIC', 'SPORTS', 'LEADERSHIP', 'ARTS', 'ATTENDANCE', 'STEM'];
 const emptyAchievement = {
@@ -14,6 +15,7 @@ const emptyAchievement = {
   recipient: '',
   category: 'ACADEMIC',
   description: '',
+  image_url: '',
   order: 0,
   is_active: true,
 };
@@ -71,10 +73,33 @@ const AdminAchievementsPage = () => {
   const save = async () => {
     try {
       if (editing === 'new') {
-        await api.post('/achievements', form);
+        const res = await api.post('/achievements', form);
+        const newId = res.data.id;
+        if (form._pendingFile) {
+          const fd = new FormData();
+          fd.append('file', form._pendingFile);
+          await api.post(`/achievements/${newId}/upload-image`, fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        }
         toast({ title: 'Achievement added' });
       } else {
-        await api.put(`/achievements/${editing}`, form);
+        await api.put(`/achievements/${editing}`, {
+          title: form.title,
+          recipient: form.recipient,
+          category: form.category,
+          description: form.description,
+          image_url: form.image_url || null,
+          order: form.order,
+          is_active: form.is_active,
+        });
+        if (form._pendingFile) {
+          const fd = new FormData();
+          fd.append('file', form._pendingFile);
+          await api.post(`/achievements/${editing}/upload-image`, fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        }
         toast({ title: 'Saved' });
       }
       close();
@@ -192,6 +217,57 @@ const AdminAchievementsPage = () => {
               className="mb-4"
               data-testid="achievement-description-input"
             />
+
+            <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+              <label className="block text-sm font-semibold mb-2">Picture (optional)</label>
+              {(form.image_url || form._pendingPreview) && (
+                <div className="relative inline-block mb-3">
+                  <img
+                    src={form._pendingPreview || assetUrl(form.image_url)}
+                    alt="Achievement preview"
+                    className="w-32 h-32 object-cover rounded-lg border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, image_url: '', _pendingFile: null, _pendingPreview: '' }))}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-sm leading-none hover:bg-red-600"
+                    aria-label="Remove image"
+                    data-testid="achievement-remove-image-btn"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setForm((f) => ({
+                      ...f,
+                      _pendingFile: file,
+                      _pendingPreview: URL.createObjectURL(file),
+                      image_url: '',
+                    }));
+                  }}
+                  className="text-sm"
+                  data-testid="achievement-image-input"
+                />
+                <span className="text-xs text-gray-500">or</span>
+                <PexelsImagePicker
+                  target="achievements"
+                  onImported={(url) =>
+                    setForm((f) => ({ ...f, image_url: url, _pendingFile: null, _pendingPreview: '' }))
+                  }
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Upload a photo or pick a free image from Pexels. If left empty, a trophy icon is shown.
+              </p>
+            </div>
+
             <label className="flex items-center gap-2 text-sm cursor-pointer mb-4">
               <input
                 type="checkbox"
@@ -221,9 +297,17 @@ const AdminAchievementsPage = () => {
                 className={`p-4 flex items-start gap-4 ${!item.is_active ? 'opacity-60' : ''}`}
                 data-testid={`achievement-row-${item.id}`}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Trophy size={24} className="text-white" />
-                </div>
+                {item.image_url ? (
+                  <img
+                    src={assetUrl(item.image_url)}
+                    alt={item.title}
+                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0 border"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Trophy size={24} className="text-white" />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex gap-2 mb-1 flex-wrap">
                     <span

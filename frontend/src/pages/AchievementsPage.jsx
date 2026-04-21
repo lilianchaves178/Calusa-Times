@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Trophy, Award } from 'lucide-react';
-import api from '../lib/api';
+import api, { assetUrl } from '../lib/api';
 
 const categoryColors = {
   ACADEMIC: 'bg-blue-100 text-blue-700',
@@ -51,26 +51,40 @@ const AchievementsPage = () => {
             {items.map((a) => (
               <div
                 key={a.id}
-                className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-[#FFD700]"
+                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-[#FFD700] overflow-hidden flex flex-col"
                 data-testid={`achievement-${a.id}`}
               >
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center flex-shrink-0">
-                    <Award size={28} className="text-white" />
+                {a.image_url && (
+                  <div className="w-full aspect-[16/10] bg-gray-100 overflow-hidden">
+                    <img
+                      src={assetUrl(a.image_url)}
+                      alt={a.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
-                  <div className="flex-1">
-                    <span
-                      className={`inline-block text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-2 ${
-                        categoryColors[a.category] || 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {a.category}
-                    </span>
-                    <h3 className="font-bold text-[#0f1e42] text-lg leading-tight">{a.title}</h3>
+                )}
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className="flex items-start gap-4 mb-4">
+                    {!a.image_url && (
+                      <div className="w-14 h-14 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center flex-shrink-0">
+                        <Award size={28} className="text-white" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <span
+                        className={`inline-block text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-2 ${
+                          categoryColors[a.category] || 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {a.category}
+                      </span>
+                      <h3 className="font-bold text-[#0f1e42] text-lg leading-tight">{a.title}</h3>
+                    </div>
                   </div>
+                  <p className="text-gray-700 font-semibold mb-2">{a.recipient}</p>
+                  {a.description && <p className="text-sm text-gray-600">{a.description}</p>}
                 </div>
-                <p className="text-gray-700 font-semibold mb-2">{a.recipient}</p>
-                {a.description && <p className="text-sm text-gray-600">{a.description}</p>}
               </div>
             ))}
           </div>
