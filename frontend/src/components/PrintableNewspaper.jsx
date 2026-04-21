@@ -24,28 +24,37 @@ const bodyFor = (article) => {
   return content.length > 340 ? content.slice(0, 340).replace(/\s+\S*$/, '') + '…' : content;
 };
 
-const StoryBlock = ({ article, lead = false }) => (
-  <article className={lead ? 'paper-lead' : 'paper-column-story'}>
-    <Kicker label={article.category} />
-    <h3 className={lead ? 'paper-lead-title' : 'paper-story-title'}>{article.title}</h3>
-    <p className="paper-byline">
-      By {article.author}{article.grade ? `, ${article.grade}` : ''}
-    </p>
+const StoryBlock = ({ article, lead = false }) => {
+  const body = bodyFor(article);
+  const hasImage = !!article.image_url;
+  const wrapClass = lead ? 'paper-lead-body-wrap' : 'paper-story-body-wrap';
+  const thumbClass = lead ? 'paper-lead-thumb' : 'paper-story-thumb';
+  const bodyClass = lead ? 'paper-lead-body' : 'paper-story-body';
+  const titleClass = lead ? 'paper-lead-title' : 'paper-story-title';
 
-    {article.image_url ? (
-      <div className="paper-story-body-wrap">
-        <img
-          src={assetUrl(article.image_url)}
-          alt={article.title}
-          className={lead ? 'paper-lead-thumb' : 'paper-story-thumb'}
-        />
-        <p className={lead ? 'paper-lead-body' : 'paper-story-body'}>{bodyFor(article)}</p>
-      </div>
-    ) : (
-      <p className={lead ? 'paper-lead-body' : 'paper-story-body'}>{bodyFor(article)}</p>
-    )}
-  </article>
-);
+  return (
+    <article className={lead ? 'paper-lead' : 'paper-column-story'}>
+      <Kicker label={article.category} />
+      <h3 className={titleClass}>{article.title}</h3>
+      <p className="paper-byline">
+        By {article.author}{article.grade ? `, ${article.grade}` : ''}
+      </p>
+
+      {hasImage ? (
+        <div className={wrapClass}>
+          <p className={bodyClass}>{body}</p>
+          <img
+            src={assetUrl(article.image_url)}
+            alt={article.title}
+            className={thumbClass}
+          />
+        </div>
+      ) : (
+        <p className={bodyClass}>{body}</p>
+      )}
+    </article>
+  );
+};
 
 const AchievementsStrip = ({ achievements }) => {
   if (!achievements?.length) return null;

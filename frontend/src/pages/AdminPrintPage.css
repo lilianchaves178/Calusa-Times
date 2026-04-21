@@ -1,4 +1,4 @@
-/* Printable newspaper layout */
+/* Printable newspaper layout (iter 17 — grid-based, no floats) */
 
 @page {
   size: Letter;
@@ -15,19 +15,16 @@
 
 .print-sheet {
   width: 8.5in;
-  min-height: 11in;
   background: #fdfbf6;
   padding: 0.5in;
   box-sizing: border-box;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   font-family: 'Georgia', 'Times New Roman', serif;
   color: #1b1b1b;
-  display: flex;
-  flex-direction: column;
   position: relative;
 }
 
-/* Masthead */
+/* ---- Masthead ---- */
 .paper-masthead {
   text-align: center;
   border-bottom: 3px double #0f1e42;
@@ -49,7 +46,7 @@
 
 .paper-title {
   font-family: 'Georgia', 'Times New Roman', serif;
-  font-size: 54px;
+  font-size: 48px;
   font-weight: 900;
   letter-spacing: -0.02em;
   color: #0f1e42;
@@ -79,7 +76,7 @@
   margin-bottom: 16px;
 }
 .paper-masthead-mini h2 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 900;
   color: #0f1e42;
   margin: 0;
@@ -91,41 +88,7 @@
   color: #777;
 }
 
-/* Lead article (hero) */
-.paper-lead {
-  border-bottom: 1px solid #c8c8c8;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
-}
-.paper-lead-title {
-  font-size: 28px;
-  font-weight: 900;
-  line-height: 1.1;
-  color: #0f1e42;
-  margin: 4px 0 6px;
-}
-.paper-lead-thumb {
-  float: right;
-  width: 2.2in;
-  max-height: 1.4in;
-  object-fit: cover;
-  margin: 2px 0 6px 14px;
-  border: 1px solid #bbb;
-  shape-outside: margin-box;
-}
-.paper-lead-body {
-  font-size: 12px;
-  line-height: 1.55;
-  text-align: justify;
-  margin: 0;
-}
-
-.paper-story-body-wrap::after {
-  content: '';
-  display: block;
-  clear: both;
-}
-
+/* ---- Kicker / byline (shared) ---- */
 .paper-kicker {
   display: inline-block;
   font-size: 9px;
@@ -135,21 +98,55 @@
   color: #fff;
   padding: 2px 6px;
 }
-
 .paper-byline {
   font-size: 11px;
   font-style: italic;
   color: #555;
-  margin: 2px 0 6px;
+  margin: 2px 0 8px;
 }
 
-/* Column stories (grid) */
+/* ---- Lead article ---- */
+.paper-lead {
+  border-bottom: 1px solid #c8c8c8;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+.paper-lead-title {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #0f1e42;
+  margin: 4px 0 6px;
+}
+
+.paper-lead-body-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1.8in;
+  gap: 16px;
+  align-items: start;
+}
+.paper-lead-thumb {
+  width: 1.8in;
+  height: 1.2in;
+  object-fit: cover;
+  border: 1px solid #bbb;
+  display: block;
+}
+.paper-lead-body {
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: justify;
+  margin: 0;
+}
+
+/* ---- Column stories grid ---- */
 .paper-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px 20px;
   border-top: 1px solid #c8c8c8;
   padding-top: 12px;
+  margin-bottom: 18px;
 }
 .paper-column-story {
   page-break-inside: avoid;
@@ -160,6 +157,7 @@
 .paper-column-story:last-child,
 .paper-column-story:nth-last-child(2):nth-child(odd) {
   border-bottom: none;
+  padding-bottom: 4px;
 }
 .paper-story-title {
   font-size: 15px;
@@ -168,14 +166,20 @@
   color: #0f1e42;
   margin: 4px 0 4px;
 }
+
+/* Text + thumbnail row using grid (no floats) */
+.paper-story-body-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1.2in;
+  gap: 10px;
+  align-items: start;
+}
 .paper-story-thumb {
-  float: right;
-  width: 1.1in;
-  max-height: 0.85in;
+  width: 1.2in;
+  height: 0.95in;
   object-fit: cover;
-  margin: 2px 0 4px 10px;
   border: 1px solid #bbb;
-  shape-outside: margin-box;
+  display: block;
 }
 .paper-story-body {
   font-size: 11px;
@@ -184,17 +188,18 @@
   margin: 0;
 }
 
-/* Achievements */
+/* ---- Achievements strip (normal flow, not floated to bottom) ---- */
 .paper-achievements {
-  margin-top: auto;
-  padding-top: 16px;
   border-top: 3px double #0f1e42;
+  padding-top: 14px;
+  margin-top: 6px;
+  margin-bottom: 14px;
 }
 .paper-section-heading {
   font-size: 16px;
   font-weight: 900;
   color: #0f1e42;
-  margin: 4px 0 6px;
+  margin: 0 0 8px;
 }
 .paper-achievements-list {
   list-style: none;
@@ -203,10 +208,10 @@
   font-size: 11px;
   line-height: 1.45;
   columns: 2;
-  column-gap: 18px;
+  column-gap: 20px;
 }
 .paper-achievements-list li {
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   break-inside: avoid;
   page-break-inside: avoid;
 }
@@ -223,9 +228,8 @@
   vertical-align: middle;
 }
 
-/* Footer */
+/* ---- Footer (sits naturally at the end of the content) ---- */
 .paper-footer {
-  margin-top: auto;
   padding-top: 10px;
   border-top: 1px solid #c8c8c8;
   display: flex;
@@ -250,7 +254,6 @@
   }
   .print-sheet {
     width: 100%;
-    min-height: 0;
     padding: 0;
     box-shadow: none;
     page-break-after: always;
