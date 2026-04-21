@@ -283,7 +283,7 @@ const AdminArticleEditPage = () => {
                   </div>
                 );
               })()}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <input
                   type="file"
                   accept="image/*"
@@ -292,6 +292,39 @@ const AdminArticleEditPage = () => {
                   className="block text-sm"
                   data-testid="article-image-input"
                 />
+                <span className="text-xs text-gray-500">or</span>
+                <PexelsImagePicker
+                  target="articles"
+                  onImported={async (url) => {
+                    if (isNew) {
+                      setForm((f) => {
+                        const staged = f.images && f.images.length ? f.images : f.image_url ? [f.image_url] : [];
+                        const nextImages = [...staged, url];
+                        return { ...f, images: nextImages, image_url: nextImages[0] };
+                      });
+                      return;
+                    }
+                    // Existing article: persist via PUT so the new image is saved immediately
+                    try {
+                      const current = form.images && form.images.length
+                        ? form.images
+                        : form.image_url ? [form.image_url] : [];
+                      const nextImages = [...current, url];
+                      const res = await api.put(`/articles/${id}`, {
+                        images: nextImages,
+                        image_url: nextImages[0],
+                      });
+                      setForm((f) => ({
+                        ...f,
+                        images: res.data.images || nextImages,
+                        image_url: res.data.image_url || nextImages[0],
+                      }));
+                      toast({ title: 'Stock image added to article' });
+                    } catch (err) {
+                      toast({ title: 'Failed to attach image', variant: 'destructive' });
+                    }
+                  }}
+                />
                 {uploading && (
                   <span className="text-sm text-gray-500 flex items-center gap-1">
                     <Upload size={14} className="animate-pulse" /> Uploading…
@@ -299,7 +332,7 @@ const AdminArticleEditPage = () => {
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Tip: Hold ⇧ / ctrl / cmd while selecting to upload multiple images at once.
+                Tip: Hold ⇧ / ctrl / cmd while selecting to upload multiple images at once. Or pick a free photo from Pexels.
               </p>
             </div>
 

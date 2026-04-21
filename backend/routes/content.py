@@ -52,6 +52,7 @@ class SpotlightPublicSubmit(BaseModel):
     name: str
     grade: Optional[str] = None
     quote: str
+    image_url: Optional[str] = None
 
 
 class SpotlightUpdate(BaseModel):
@@ -90,6 +91,7 @@ async def public_submit_spotlight(payload: SpotlightPublicSubmit):
         name=payload.name,
         grade=payload.grade,
         quote=payload.quote,
+        image_url=payload.image_url,
         approved=False,
         is_active=True,
         order=0,

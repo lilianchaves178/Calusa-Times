@@ -39,6 +39,7 @@ class ArtSubmissionCreate(BaseModel):
     description: Optional[str] = None
     artist_name: str
     grade: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 @router.get("", response_model=List[ArtSubmission])
@@ -61,7 +62,7 @@ async def get_pending_art(_=Depends(require_permission("edit"))):
 
 @router.post("", response_model=ArtSubmission)
 async def create_art_submission(submission: ArtSubmissionCreate):
-    obj = ArtSubmission(**submission.dict())
+    obj = ArtSubmission(**submission.dict(exclude_none=True))
     await db.art_submissions.insert_one(obj.dict())
     email_service.fire_and_forget(email_service.notify_new_art(db, obj.dict()))
     return obj

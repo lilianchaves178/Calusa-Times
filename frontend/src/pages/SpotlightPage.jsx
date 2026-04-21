@@ -8,6 +8,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { useToast } from '../hooks/use-toast';
 import api, { assetUrl } from '../lib/api';
+import PexelsImagePicker from '../components/PexelsImagePicker';
 
 const emptyForm = { name: '', grade: '', quote: '' };
 
@@ -18,6 +19,7 @@ const SpotlightPage = () => {
 
   const [form, setForm] = useState(emptyForm);
   const [image, setImage] = useState(null);
+  const [stockImageUrl, setStockImageUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -33,7 +35,10 @@ const SpotlightPage = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await api.post('/spotlight/submit', form);
+      const res = await api.post('/spotlight/submit', {
+        ...form,
+        image_url: stockImageUrl || undefined,
+      });
       const newId = res.data.id;
       if (image) {
         const fd = new FormData();
@@ -48,6 +53,7 @@ const SpotlightPage = () => {
       });
       setForm(emptyForm);
       setImage(null);
+      setStockImageUrl('');
       setSubmitted(true);
     } catch (err) {
       toast({
@@ -204,11 +210,14 @@ const SpotlightPage = () => {
                   <label className="block text-sm font-semibold mb-1">
                     Upload a picture (optional)
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setImage(e.target.files[0] || null)}
+                      onChange={(e) => {
+                        setImage(e.target.files[0] || null);
+                        if (e.target.files[0]) setStockImageUrl('');
+                      }}
                       className="text-sm"
                       data-testid="spotlight-submit-image"
                     />
@@ -217,9 +226,32 @@ const SpotlightPage = () => {
                         <Upload size={12} /> {image.name}
                       </span>
                     )}
+                    <span className="text-xs text-gray-500">or</span>
+                    <PexelsImagePicker
+                      target="spotlight"
+                      onImported={(url) => { setImage(null); setStockImageUrl(url); }}
+                    />
                   </div>
+                  {stockImageUrl && (
+                    <div className="mt-3 inline-flex items-center gap-2 text-sm text-gray-700">
+                      <img
+                        src={stockImageUrl}
+                        alt="Stock preview"
+                        className="w-14 h-14 rounded object-cover border"
+                      />
+                      <span>Free Pexels photo selected.</span>
+                      <button
+                        type="button"
+                        onClick={() => setStockImageUrl('')}
+                        className="text-gray-400 hover:text-gray-700"
+                        aria-label="Remove stock image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
-                    A clear headshot or a photo of your achievement works best.
+                    A clear headshot or a photo of your achievement works best. Or pick a free photo from Pexels.
                   </p>
                 </div>
 

@@ -9,6 +9,7 @@ import { Card } from '../components/ui/card';
 import { useToast } from '../hooks/use-toast';
 import { Palette } from 'lucide-react';
 import api from '../lib/api';
+import PexelsImagePicker from '../components/PexelsImagePicker';
 
 const SubmitArtPage = () => {
   const navigate = useNavigate();
@@ -20,25 +21,31 @@ const SubmitArtPage = () => {
     grade: '',
   });
   const [image, setImage] = useState(null);
+  const [stockImageUrl, setStockImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!image) {
+    if (!image && !stockImageUrl) {
       toast({ title: 'Please select an image', variant: 'destructive' });
       return;
     }
     setLoading(true);
 
     try {
-      const createRes = await api.post('/art', formData);
+      const createRes = await api.post('/art', {
+        ...formData,
+        image_url: stockImageUrl || undefined,
+      });
       const artId = createRes.data.id;
 
-      const fd = new FormData();
-      fd.append('file', image);
-      await api.post(`/art/${artId}/upload-image`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (image) {
+        const fd = new FormData();
+        fd.append('file', image);
+        await api.post(`/art/${artId}/upload-image`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
 
       toast({
         title: 'Art submitted!',
@@ -116,15 +123,39 @@ const SubmitArtPage = () => {
 
             <div>
               <label className="block text-sm font-semibold mb-2">Upload Your Artwork</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImage(e.target.files[0])}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                required
-                data-testid="submit-art-image-input"
-              />
-              <p className="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => { setImage(e.target.files[0]); if (e.target.files[0]) setStockImageUrl(''); }}
+                  className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg"
+                  data-testid="submit-art-image-input"
+                />
+                <span className="text-xs text-gray-500">or</span>
+                <PexelsImagePicker
+                  target="art"
+                  onImported={(url) => { setImage(null); setStockImageUrl(url); }}
+                />
+              </div>
+              {stockImageUrl && (
+                <div className="mt-3 inline-flex items-center gap-2 text-sm text-gray-700">
+                  <img
+                    src={stockImageUrl}
+                    alt="Stock preview"
+                    className="w-16 h-16 rounded object-cover border"
+                  />
+                  <span>Free Pexels photo selected.</span>
+                  <button
+                    type="button"
+                    onClick={() => setStockImageUrl('')}
+                    className="text-gray-400 hover:text-gray-700"
+                    aria-label="Remove stock image"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <p className="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF. Or pick a free photo from Pexels.</p>
             </div>
 
             <div className="flex gap-4">

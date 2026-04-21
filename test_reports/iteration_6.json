@@ -1,0 +1,51 @@
+{
+  "summary": "Iteration 6 (Pexels integration): All 12 backend Pexels tests pass (search + import + image_url persistence on art and spotlight). End-to-end verification surfaced TWO blocker bugs that prevent the user-visible flow from succeeding: (1) backend POST /api/articles returns 500 when payload omits 'images' (Pydantic ValidationError - Optional in ArticleCreate but required list in Article); (2) PexelsImagePicker.jsx renders a <form> inside the parent submission <form>, producing 'In HTML, <form> cannot be a descendant of <form>' hydration error and causing inputs to be re-mounted/cleared on SubmitStoryPage when the picker opens.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/articles", "issue": "500 ValidationError when client omits 'images'. ArticleCreate.images is Optional[List[str]]=None but Article.images requires List[str]. Repro: curl POST with {category,title,description,content,author,comments_enabled} returns 500 'Input should be a valid list ... input_value=None'. Fix in routes/articles.py create_article: coerce None -> [] before instantiating Article (e.g. article_dict.setdefault('images', []) or article_dict['images'] = article_dict.get('images') or []). This breaks SubmitStoryPage entirely.", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/articles/upload-image", "issue": "Standalone upload no longer requires auth (returns 200 anonymously). Iteration-5 regression test expected 401/403. If intentional (to support student image uploads) please update the contract; if unintentional, restore Depends(require_permission('upload'))."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PexelsImagePicker", "issue": "Modal markup contains an inner <form onSubmit={search}> for the search bar. When the picker is dropped inside a parent <form> (SubmitStoryPage, SpotlightPage self-submit, SubmitArtPage), React/HTML errors out with 'In HTML, <form> cannot be a descendant of <form>' (captured in console). After the picker opens, the parent form's text inputs vanish (re-mount), so users lose typed values. Fix: change the inner <form> to a <div> and trigger search() via the button's onClick + Enter keydown handler; OR portal the picker to <body>.", "selector": "[data-testid=\"pexels-picker-modal\"] form", "priority": "HIGH"},
+      {"component": "AdminArticleEditPage", "issue": "Same nested-form hazard if PexelsImagePicker is rendered inside the edit <form>. Verify and fix per above.", "selector": "AdminArticleEditPage form > PexelsImagePicker", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Submit Story with Pexels", "issue": "Cannot complete end-to-end: backend 500 on POST /articles AND parent form re-mounts on picker open. Fix backend coercion + nested-form first, then re-test.", "affected_selectors": ["[data-testid=\"open-pexels-picker-btn\"]", "[data-testid=\"pexels-picker-modal\"]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pexels.py",
+    "/app/test_reports/pytest/pytest_results_iter6_pexels.xml",
+    "/app/test_reports/pytest/pytest_results_iter6_regression.xml"
+  ],
+  "action_items": [
+    "BACKEND CRITICAL: In /app/backend/routes/articles.py create_article, coerce article_dict['images'] to [] when None before Article(**article_dict). Optionally also default images=[] in models.ArticleCreate so the public payload doesn't need to send it.",
+    "FRONTEND CRITICAL: Remove the <form> tag inside PexelsImagePicker (keep the search input + button but trigger onClick / onKeyDown(Enter) instead of form submit). This unblocks SubmitStory, Spotlight self-submit, SubmitArt and AdminArticleEdit.",
+    "Re-run the SubmitStoryPage + Pexels playwright flow after the two fixes; expect API_LOG to show 200 POST /api/articles and navigation to /articles.",
+    "Decide intent for POST /api/articles/upload-image being public (no auth) and align routes vs tests."
+  ],
+  "critical_code_review_comments": [
+    "routes/pexels.py: import_pexels_image content_type parsing extracts ext from 'image/jpeg; charset=...' correctly via split('/')[-1].split(';')[0], but does not whitelist ext (so a server returning 'image/svg+xml' would create .svg+xml files). Consider whitelisting {jpg,png,gif,webp}.",
+    "routes/pexels.py: /search is unauthenticated and proxies Pexels; consider a small in-memory rate limit per IP since the key is shared.",
+    "routes/art.py and routes/content.py correctly persist optional image_url (verified via pytest including post-approval public visibility for art).",
+    "routes/articles.py POST /articles regression: the new ArticleCreate field set or model evolution left images=None reaching Article. Add a model_validator or default_factory on ArticleCreate."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pexels.py"
+  ],
+  "success_rate": {
+    "backend": "Pexels suite 100% (12/12). Regression suite degraded due to pre-existing /articles 500 -> ~70%.",
+    "frontend": "Blocked: nested-form hydration error breaks SubmitStoryPage form. Picker UI itself loads, search works, photos render."
+  },
+  "test_credentials": "admin@calusaschool.org / Calusa2024! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "test_pexels.py creates TEST_-prefixed art and spotlight items and cleans up via DELETE. Pexels imports leave files under /app/uploads/{target}/ (not cleaned - low volume, acceptable).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "After main agent applies the two fixes (images coercion + remove nested <form> in PexelsImagePicker), re-run /app/backend/tests/test_pexels.py and exercise SubmitStoryPage end-to-end via playwright. Expect POST /api/pexels/import 200 -> POST /api/articles 200 -> redirect to /articles. Also smoke /spotlight self-submit and /submit-art with Pexels-only (no file). The picker data-testids are stable: open-pexels-picker-btn, pexels-picker-modal, pexels-search-input, pexels-search-submit, pexels-photo-{id}.",
+  "rca of the issue": "1) ArticleCreate.images=Optional[List[str]]=None passes through .dict() unchanged; Article.images is List[str] (no Optional, no default override) so pydantic rejects None. Trigger: any client (incl. SubmitStoryPage) that omits 'images'. 2) PexelsImagePicker uses <form onSubmit={search}> for its search bar; when consumed inside a parent <form>, React hydration logs the nested-form error and re-mounts subtrees, clearing parent inputs."
+}
