@@ -19,6 +19,7 @@ def set_db(database):
 GIVEBACKS_URL = "https://www.givebacks.com/causes/calusa/shop/items/50684"
 TIER_PRICES = {"plain": 3, "featured": 5}
 MURAL_DISPLAY_DAYS = 30
+FEATURED_SLOT_LIMIT = 2
 
 
 class MuralMessage(BaseModel):
@@ -76,7 +77,31 @@ async def get_pending_mural_messages(_=Depends(require_permission("edit"))):
 async def create_mural_message(payload: MuralMessageCreate):
     colors = ["yellow", "pink", "blue", "green", "orange", "purple"]
     color = payload.color if payload.color else random.choice(colors)
-    tier = payload.tier if payload.tier in TIER_PRICES else "plain"
+    requested_tier = payload.tier if payload.tier in TIER_PRICES else "plain"
+
+    # Enforce featured slot cap at submission time so parents can't
+    # hold a Givebacks reservation for a slot that's already taken.
+    if requested_tier == "featured":
+        now = datetime.utcnow()
+        featured_active = await db.mural_messages.count_documents({
+            "tier": "featured",
+            "approved": True,
+            "paid": True,
+            "$or": [
+                {"expires_at": None},
+                {"expires_at": {"$gt": now}},
+            ],
+        })
+        if featured_active >= FEATURED_SLOT_LIMIT:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Featured slots are full right now — please pick the plain tier or "
+                    "try again after a featured message expires."
+                ),
+            )
+
+    tier = requested_tier
     price = TIER_PRICES[tier]
 
     msg = MuralMessage(
@@ -158,8 +183,21 @@ async def delete_mural_message(message_id: str, _=Depends(require_permission("de
 
 @router.get("/config/pricing")
 async def get_mural_pricing():
+    now = datetime.utcnow()
+    featured_active = await db.mural_messages.count_documents({
+        "tier": "featured",
+        "approved": True,
+        "paid": True,
+        "$or": [
+            {"expires_at": None},
+            {"expires_at": {"$gt": now}},
+        ],
+    })
     return {
         "tiers": TIER_PRICES,
         "givebacks_url": GIVEBACKS_URL,
         "display_days": MURAL_DISPLAY_DAYS,
+        "featured_slot_limit": FEATURED_SLOT_LIMIT,
+        "featured_slots_used": featured_active,
+        "featured_available": featured_active < FEATURED_SLOT_LIMIT,
     }

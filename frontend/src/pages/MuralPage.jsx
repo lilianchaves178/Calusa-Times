@@ -67,42 +67,65 @@ const MuralPage = () => {
               <p className="text-gray-600">Be the first to pin a message.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {messages.map((msg) => {
-                const isFeatured = msg.tier === 'featured';
-                return (
-                  <div
-                    key={msg.id}
-                    className={`${colorClasses[msg.color] || 'bg-yellow-200'} p-6 rounded-sm shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 relative ${
-                      isFeatured ? 'ring-4 ring-yellow-400 md:col-span-2' : ''
-                    }`}
-                    style={{ transform: `rotate(${msg.rotation || 0}deg)` }}
-                    data-testid={`mural-message-${msg.id}`}
-                  >
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <div className="w-6 h-6 bg-red-600 rounded-full shadow-lg border-2 border-red-800"></div>
-                    </div>
-                    {isFeatured && (
-                      <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow">
-                        <Star size={12} className="fill-yellow-900" /> Featured
-                      </div>
-                    )}
-                    <div className="mt-4">
-                      <p
-                        className={`text-gray-800 font-handwriting mb-4 leading-relaxed ${
-                          isFeatured ? 'text-2xl' : 'text-lg'
-                        }`}
+            <>
+              {/* Featured row — max 2 side by side */}
+              {messages.some((m) => m.tier === 'featured') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {messages
+                    .filter((m) => m.tier === 'featured')
+                    .slice(0, 2)
+                    .map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`${colorClasses[msg.color] || 'bg-yellow-200'} p-8 rounded-sm shadow-xl hover:shadow-2xl transition-all transform hover:scale-[1.02] relative ring-4 ring-yellow-400`}
+                        style={{ transform: `rotate(${msg.rotation || 0}deg)` }}
+                        data-testid={`mural-message-${msg.id}`}
                       >
-                        {msg.message}
-                      </p>
-                      <p className="text-gray-600 text-sm font-semibold text-right">
-                        - {msg.author_name}
-                      </p>
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                          <div className="w-6 h-6 bg-red-600 rounded-full shadow-lg border-2 border-red-800"></div>
+                        </div>
+                        <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow">
+                          <Star size={12} className="fill-yellow-900" /> Featured
+                        </div>
+                        <div className="mt-4">
+                          <p className="text-gray-800 font-handwriting text-2xl mb-4 leading-relaxed">
+                            {msg.message}
+                          </p>
+                          <p className="text-gray-600 text-sm font-semibold text-right">
+                            - {msg.author_name}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* Plain messages grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {messages
+                  .filter((m) => m.tier !== 'featured')
+                  .map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`${colorClasses[msg.color] || 'bg-yellow-200'} p-6 rounded-sm shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 relative`}
+                      style={{ transform: `rotate(${msg.rotation || 0}deg)` }}
+                      data-testid={`mural-message-${msg.id}`}
+                    >
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <div className="w-6 h-6 bg-red-600 rounded-full shadow-lg border-2 border-red-800"></div>
+                      </div>
+                      <div className="mt-4">
+                        <p className="text-gray-800 font-handwriting text-lg mb-4 leading-relaxed">
+                          {msg.message}
+                        </p>
+                        <p className="text-gray-600 text-sm font-semibold text-right">
+                          - {msg.author_name}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+              </div>
+            </>
           )}
 
           <div className="mt-12 bg-white/90 backdrop-blur rounded-2xl p-8 shadow-xl">

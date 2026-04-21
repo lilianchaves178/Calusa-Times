@@ -32,13 +32,22 @@ const PostMessagePage = () => {
   const [pricing, setPricing] = useState({
     tiers: { plain: 3, featured: 5 },
     givebacks_url: 'https://www.givebacks.com/causes/calusa/shop/items/50684',
+    featured_slot_limit: 2,
+    featured_slots_used: 0,
+    featured_available: true,
   });
   const [submitted, setSubmitted] = useState(null);
 
   useEffect(() => {
     api
       .get('/mural/config/pricing')
-      .then((res) => setPricing(res.data))
+      .then((res) => {
+        setPricing(res.data);
+        // If user had featured selected but it's no longer available, drop to plain
+        if (!res.data.featured_available) {
+          setFormData((f) => (f.tier === 'featured' ? { ...f, tier: 'plain' } : f));
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -191,7 +200,11 @@ const PostMessagePage = () => {
 
                 <div>
                   <label className="block text-sm font-semibold mb-3">Tier</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div
+                    className={`grid grid-cols-1 ${
+                      pricing.featured_available ? 'md:grid-cols-2' : ''
+                    } gap-3`}
+                  >
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, tier: 'plain' })}
@@ -210,29 +223,46 @@ const PostMessagePage = () => {
                       </div>
                       <p className="text-xs text-gray-600">Standard post-it on the mural</p>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, tier: 'featured' })}
-                      className={`p-4 rounded-lg border-2 text-left transition-all ${
-                        formData.tier === 'featured'
-                          ? 'border-amber-600 bg-amber-50'
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                      data-testid="post-tier-featured"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-gray-900 flex items-center gap-1">
-                          <Star size={14} className="text-yellow-500 fill-yellow-500" /> Featured
-                        </span>
-                        <span className="text-2xl font-black text-amber-600">
-                          ${pricing.tiers.featured}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600">
-                        Larger, highlighted with a golden ring
-                      </p>
-                    </button>
+                    {pricing.featured_available && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, tier: 'featured' })}
+                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                          formData.tier === 'featured'
+                            ? 'border-amber-600 bg-amber-50'
+                            : 'border-gray-200 hover:border-gray-400'
+                        }`}
+                        data-testid="post-tier-featured"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-gray-900 flex items-center gap-1">
+                            <Star size={14} className="text-yellow-500 fill-yellow-500" /> Featured
+                          </span>
+                          <span className="text-2xl font-black text-amber-600">
+                            ${pricing.tiers.featured}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          Larger, highlighted with a golden ring
+                          <span className="block text-[10px] text-amber-700 mt-1">
+                            {pricing.featured_slot_limit - pricing.featured_slots_used} of{' '}
+                            {pricing.featured_slot_limit} spots available
+                          </span>
+                        </p>
+                      </button>
+                    )}
                   </div>
+                  {!pricing.featured_available && (
+                    <p
+                      className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3"
+                      data-testid="featured-full-notice"
+                    >
+                      <Star size={12} className="inline mr-1 text-yellow-600 fill-yellow-500" />
+                      Featured spots are full right now! Both featured slots are currently taken.
+                      Check back after one expires, or grab the plain tier for $
+                      {pricing.tiers.plain}.
+                    </p>
+                  )}
                 </div>
 
                 {/* Preview */}
@@ -302,17 +332,28 @@ const PostMessagePage = () => {
                     ${pricing.tiers.plain}
                   </div>
                 </div>
-                <div className="bg-white rounded-lg p-4 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-gray-900 flex items-center gap-1">
-                      <Star size={14} className="text-yellow-500 fill-yellow-500" /> Featured
+                {pricing.featured_available ? (
+                  <div className="bg-white rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-gray-900 flex items-center gap-1">
+                        <Star size={14} className="text-yellow-500 fill-yellow-500" /> Featured
+                      </p>
+                      <p className="text-xs text-gray-600">Larger & highlighted</p>
+                    </div>
+                    <div className="text-3xl font-black text-amber-600">
+                      ${pricing.tiers.featured}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-100 rounded-lg p-4 opacity-80">
+                    <p className="font-bold text-gray-700 flex items-center gap-1 line-through">
+                      <Star size={14} className="text-gray-400" /> Featured — sold out
                     </p>
-                    <p className="text-xs text-gray-600">Larger & highlighted</p>
+                    <p className="text-xs text-gray-500">
+                      Both featured spots are taken — check back soon!
+                    </p>
                   </div>
-                  <div className="text-3xl font-black text-amber-600">
-                    ${pricing.tiers.featured}
-                  </div>
-                </div>
+                )}
               </div>
 
               <div className="bg-white rounded-lg p-4 mb-4">
