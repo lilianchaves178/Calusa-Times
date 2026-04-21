@@ -18,11 +18,12 @@ const ArticleCard = ({ article, featured = false }) => {
         featured ? 'ring-4 ring-yellow-400' : ''
       }`}>
         {article.image && (
-          <div className="relative h-48 overflow-hidden">
-            <img 
-              src={article.image} 
+          <div className="relative h-48 overflow-hidden bg-gray-50 flex items-center justify-center">
+            <img
+              src={article.image}
               alt={article.title}
-              className="w-full h-full object-cover transition-transform hover:scale-105"
+              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform hover:scale-105"
+              loading="lazy"
             />
             {featured && (
               <div className="absolute top-3 left-3">
