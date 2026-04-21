@@ -75,7 +75,7 @@ const PhotoOfTheWeek = () => {
         className="group block relative overflow-hidden rounded-2xl border-4 border-[#0f1e42] bg-black shadow-lg"
         data-testid="photo-of-the-week-link"
       >
-        <div className="relative aspect-[16/7] w-full overflow-hidden">
+        <div className="relative aspect-[5/2] max-h-[360px] w-full overflow-hidden">
           {/* Blurred backdrop fills any letterbox gap with the same photo */}
           <img
             src={assetUrl(current.image_url)}

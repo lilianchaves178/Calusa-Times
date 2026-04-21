@@ -16,29 +16,35 @@ const formattedToday = new Date().toLocaleDateString('en-US', {
 const NewspaperHeader = () => {
   return (
     <div className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="max-w-7xl mx-auto px-6 py-7">
         {/* Metadata line */}
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1.5">
+        <div className="flex items-center justify-between text-xs uppercase tracking-[0.22em] text-gray-500 mb-3">
           <span>Vol. 7 · Issue 16</span>
           <span className="hidden sm:inline">{formattedToday}</span>
           <span>Est. 2019</span>
         </div>
 
         {/* Title row */}
-        <div className="flex items-center justify-center gap-3">
-          <Star size={14} className="text-yellow-400 hidden sm:block" fill="#FBBF24" />
+        <div className="flex items-center justify-center gap-4">
+          <Star size={18} className="text-yellow-400 hidden sm:block" fill="#FBBF24" />
           <h1
-            className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0f1e42] leading-none tracking-tight"
+            className="text-4xl sm:text-5xl md:text-6xl font-black text-[#0f1e42] leading-none tracking-tight"
             style={{ fontFamily: 'Georgia, serif' }}
           >
             The Calusa Times
           </h1>
-          <Star size={14} className="text-yellow-400 hidden sm:block" fill="#FBBF24" />
+          <Star size={18} className="text-yellow-400 hidden sm:block" fill="#FBBF24" />
+        </div>
+
+        {/* Double rule under title */}
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <div className="h-px w-16 bg-[#0f1e42]" />
+          <div className="h-px w-16 bg-[#0f1e42]" />
         </div>
 
         {/* Tagline */}
         <p
-          className="text-center text-[11px] sm:text-xs text-[#0f1e42]/80 tracking-[0.15em] uppercase mt-1"
+          className="text-center text-[11px] sm:text-xs text-[#0f1e42]/80 tracking-[0.18em] uppercase mt-2"
           style={{ fontFamily: 'Georgia, serif' }}
         >
           Calusa Elementary · Student-powered since 2019 ·{' '}
