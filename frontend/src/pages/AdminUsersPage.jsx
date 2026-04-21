@@ -19,6 +19,13 @@ const AdminUsersPage = () => {
     toast({ title: "Role Updated", description: `User role changed to ${newRole}` });
   };
 
+  const handleAddUser = () => {
+    toast({ 
+      title: "Add User", 
+      description: "User creation form coming soon! For now, users can register at /admin" 
+    });
+  };
+
   const handleDelete = (userId) => {
     if (window.confirm('Delete this user?')) {
       setUsers(users.filter(u => u.id !== userId));
@@ -50,7 +57,7 @@ const AdminUsersPage = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">All Users ({users.length})</h2>
-          <Button className="bg-purple-600 hover:bg-purple-700">
+          <Button className="bg-purple-600 hover:bg-purple-700" onClick={handleAddUser}>
             <UserPlus size={18} className="mr-2" />Add New User
           </Button>
         </div>
