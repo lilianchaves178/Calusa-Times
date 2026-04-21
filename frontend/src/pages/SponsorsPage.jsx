@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Sparkles, Mail, Phone } from 'lucide-react';
+import { Sparkles, Mail, Phone, ArrowRight } from 'lucide-react';
 import api, { assetUrl } from '../lib/api';
 
 const SponsorsPage = () => {
@@ -23,19 +23,48 @@ const SponsorsPage = () => {
     bronze: sponsors.filter((s) => s.tier === 'bronze'),
   };
 
-  const SponsorLink = ({ s, className }) => (
+  const SponsorLink = ({ s, className, nameSize = 'text-base' }) => (
     <a
       href={s.website_url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all flex items-center justify-center ${className}`}
+      className={`group relative bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all flex items-center justify-center overflow-hidden ${className}`}
       data-testid={`sponsor-${s.id}`}
     >
-      {s.logo_url ? (
-        <img src={assetUrl(s.logo_url)} alt={s.name} className="max-w-full max-h-full object-contain" />
-      ) : (
-        <span className="font-bold text-gray-700 px-4">{s.name}</span>
-      )}
+      {/* Logo layer */}
+      <div className="w-full h-full flex items-center justify-center p-4 transition-opacity duration-300 group-hover:opacity-0">
+        {s.logo_url ? (
+          <img
+            src={assetUrl(s.logo_url)}
+            alt={s.name}
+            className="max-w-full max-h-full object-contain"
+          />
+        ) : (
+          <span className={`font-bold text-gray-700 ${nameSize}`}>{s.name}</span>
+        )}
+      </div>
+
+      {/* Rollover description overlay */}
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-center p-5 bg-gradient-to-br from-blue-900 to-blue-700 text-white opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
+        data-testid={`sponsor-overlay-${s.id}`}
+      >
+        <h3 className={`font-black ${nameSize === 'text-base' ? 'text-lg' : nameSize} mb-2 text-center`}>
+          {s.name}
+        </h3>
+        {s.description ? (
+          <p className="text-sm text-blue-100 text-center leading-snug line-clamp-4 mb-3">
+            {s.description}
+          </p>
+        ) : (
+          <p className="text-sm italic text-blue-200 text-center mb-3">Proud sponsor of Calusa Elementary</p>
+        )}
+        {s.website_url && (
+          <span className="inline-flex items-center gap-1 bg-yellow-400 text-blue-900 font-bold text-xs px-3 py-1.5 rounded-full shadow">
+            Visit site <ArrowRight size={12} />
+          </span>
+        )}
+      </div>
     </a>
   );
 
@@ -67,7 +96,7 @@ const SponsorsPage = () => {
                 <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">Platinum Sponsors</h2>
                 <div className="flex flex-wrap justify-center gap-6">
                   {tiers.platinum.map((s) => (
-                    <SponsorLink key={s.id} s={s} className="p-8 w-full max-w-md h-48" />
+                    <SponsorLink key={s.id} s={s} className="p-8 w-full max-w-md h-48" nameSize="text-2xl" />
                   ))}
                 </div>
               </div>
@@ -77,7 +106,7 @@ const SponsorsPage = () => {
                 <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">Gold Sponsors</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {tiers.gold.map((s) => (
-                    <SponsorLink key={s.id} s={s} className="p-6 h-40" />
+                    <SponsorLink key={s.id} s={s} className="p-6 h-40" nameSize="text-xl" />
                   ))}
                 </div>
               </div>
@@ -87,7 +116,7 @@ const SponsorsPage = () => {
                 <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">Silver Sponsors</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   {tiers.silver.map((s) => (
-                    <SponsorLink key={s.id} s={s} className="p-4 h-32" />
+                    <SponsorLink key={s.id} s={s} className="p-4 h-32" nameSize="text-base" />
                   ))}
                 </div>
               </div>
@@ -97,7 +126,7 @@ const SponsorsPage = () => {
                 <h2 className="text-xl font-bold text-center mb-6 text-gray-900">Bronze Sponsors</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {tiers.bronze.map((s) => (
-                    <SponsorLink key={s.id} s={s} className="p-3 h-24" />
+                    <SponsorLink key={s.id} s={s} className="p-3 h-24" nameSize="text-sm" />
                   ))}
                 </div>
               </div>

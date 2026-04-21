@@ -142,11 +142,17 @@ const AdminSponsorEditPage = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">Description</label>
+              <label className="block text-sm font-semibold mb-2">
+                Description
+                <span className="ml-2 text-xs font-normal text-gray-500">
+                  (appears on hover on the public Sponsors page)
+                </span>
+              </label>
               <Textarea
                 value={form.description || ''}
                 onChange={(e) => update('description', e.target.value)}
-                rows={3}
+                rows={4}
+                placeholder="A short blurb parents will see when they hover on your logo — 1–2 sentences."
                 data-testid="sponsor-description-input"
               />
             </div>
