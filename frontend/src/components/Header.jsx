@@ -21,7 +21,7 @@ const navItems = [
   { path: '/', label: 'Home', icon: Home },
   { path: '/articles', label: 'Articles', icon: Newspaper },
   { path: '/mural', label: 'Mural', icon: MessageSquare },
-  { path: '/student-art', label: 'Art Gallery', icon: Palette },
+  { path: '/student-art', label: 'Student Gallery', icon: Palette },
   { path: '/sponsors', label: 'Sponsors', icon: Sparkles },
   { path: '/spotlight', label: 'Spotlight', icon: Users },
   { path: '/achievements', label: 'Achievements', icon: Trophy },
