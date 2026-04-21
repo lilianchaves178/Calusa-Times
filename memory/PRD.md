@@ -57,6 +57,10 @@ See `/app/memory/test_credentials.md`.
 - Backend: **49/49 pytest green** (`/app/backend/tests/backend_test.py`)
 - Frontend E2E: all 19 tested flows green (iteration 3)
 
+### Iteration 5 (Feb 21, 2026)
+- ⏲ **30-day Mural auto-expiry** enforced. On admin approval, `expires_at = now + 30 days`. Public `GET /api/mural` excludes expired messages by default; admins pass `?include_expired=true` to see them. New **`PUT /api/mural/{id}/extend?days=N`** (admin) to reset or extend a message's display window (defaults to 30). Admin Mural page now shows expiry date on each approved message with a **+30 days** button. `GET /api/mural/config/pricing` now returns `display_days` for frontend copy.
+- Backend: **55/55 pytest green** — includes 6 new expiry test cases.
+
 ## Backlog
 ### P1
 - **Verify `calusaschool.org` domain in Resend** so notifications can reach every admin account (not just `lilian.chaves1@gmail.com`). Step-by-step: Resend Dashboard → Domains → Add Domain → add DNS TXT/MX records → update `SENDER_EMAIL` in `.env` to e.g. `news@calusaschool.org`.
@@ -65,7 +69,7 @@ See `/app/memory/test_credentials.md`.
 ### P2
 - Less intrusive popup UX (toast/banner instead of full-screen modal).
 - Sort/filter/search on Admin Comments, Sponsors, Art, Popups, Mural lists (only Articles has it today).
-- Mural message 30-day auto-expiry (field exists, enforcement missing).
+- Mural message 30-day auto-expiry (field exists, enforcement missing). ✅ done (Iter 5)
 - Givebacks webhook listener for auto-approval on payment (would require partnership access).
 
 ### Tech debt
