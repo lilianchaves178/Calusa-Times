@@ -1,0 +1,67 @@
+{
+  "summary": "First backend run for The Calusa Times. Wrote comprehensive pytest suite (33 tests) covering auth, user mgmt, articles CRUD + uploads + analytics, comments, sponsors, art, popups, and mural (Givebacks tiered pricing). 32/33 passed. One real bug: GET /api/articles/{id}/analytics returns 500 because recent_activity embeds raw Mongo analytics docs containing ObjectId _id, which FastAPI cannot JSON-encode. All other flows (login, JWT auth, role-based 403s, CRUD + persistence, image uploads that return /api/uploads/... URLs and are served back, cascading comment deletion, comments_enabled=false blocking POSTs with 403, mural tier pricing plain=$3/featured=$5, invalid tier fallback, pending queues, approve/reject) work correctly. _id is correctly stripped from all other list/detail responses.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/articles/{article_id}/analytics",
+        "issue": "Returns HTTP 500 (ValueError: 'ObjectId' object is not iterable). routes/articles.py:161 does `await db.analytics.find(...).to_list(1000)` without excluding _id, then returns those docs inside `recent_activity`. FastAPI's jsonable_encoder fails on the Mongo ObjectId. Fix: add projection `{\"_id\": 0}` to the find, OR strip `_id` from each doc before returning.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "routes/articles.py (list/detail)",
+        "issue": "get_articles / get_article call db.articles.find without a {\"_id\": 0} projection. It currently works only because the Article Pydantic response_model silently drops unknown fields. For safety/consistency with other routes (mural, sponsors, popups, art) that already use {\"_id\": 0}, recommend adding the same projection."
+      },
+      {
+        "endpoint": "routes/comments.py (list + pending)",
+        "issue": "Same as above — no {\"_id\": 0} projection; relies on Comment response_model to drop _id. Works today but inconsistent."
+      },
+      {
+        "endpoint": "POST /api/auth/register",
+        "issue": "No auth guard by design (per spec). Anyone on the internet can create accounts (even with role=editor/admin if role is passed). Consider protecting this endpoint with manage_users permission for production, or restrict role to 'viewer' in the public flow."
+      },
+      {
+        "endpoint": "GET /api/auth/me",
+        "issue": "When no Authorization header is sent, FastAPI's HTTPBearer returns 403 (not 401). Minor spec deviation — still 'unauthorized' semantically but status code differs from the stated 'Invalid/missing token returns 401'."
+      },
+      {
+        "endpoint": "JWT_SECRET_KEY",
+        "issue": "Falls back to the literal default 'your-secret-key-change-in-production' if env var is unset. Should fail-fast instead. Check /app/backend/.env has a proper secret before production."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix GET /api/articles/{id}/analytics 500 — add {\"_id\": 0} projection on db.analytics.find(...) in routes/articles.py get_article_analytics (critical).",
+    "Add {\"_id\": 0} projection to db.articles.find and db.comments.find for consistency with other routes.",
+    "Decide whether POST /api/auth/register should require manage_users permission — current implementation lets anyone register with any role.",
+    "Ensure JWT_SECRET_KEY is set in backend/.env (currently falls back to an insecure default)."
+  ],
+  "critical_code_review_comments": [
+    "routes/articles.py get_article_analytics: raw Mongo docs leaked into response body → 500. Fix: projection or strip _id.",
+    "Several routes mix find() with and without {\"_id\": 0}. Standardise to always exclude _id at the query level rather than relying on response_model.",
+    "auth.py: manage_users permission guard works, but the dependency shadows the admin-created token (no self-protection — an admin could delete themselves). Consider blocking delete-self.",
+    "mural/sponsors/popups/art: Pydantic models use default_factory properly (no mutable-default bug) — refactor looks clean.",
+    "No auth guard on articles/comments/sponsors/art/popups/mural write endpoints. If this is intentional for the CMS (same-site admin UI) it is fine, but it means anyone with the public URL can create/delete content. Recommend gating the mutating routes behind the admin's JWT via Depends(require_permission('edit'/'delete'))."
+  ],
+  "updated_files": [
+    "/app/backend/tests/__init__.py",
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "97% (32/33)", "frontend": "not tested"},
+  "test_credentials": "admin@calusaschool.org / Calusa2024! (seeded via python /app/backend/create_admin.py; idempotent).",
+  "seed_data_creation": "Tests create and tear down their own TEST_-prefixed users, articles, comments, sponsors, art, popups, and mural messages. Nothing permanent left behind aside from uploaded image files in /app/uploads/* (harmless, filenames are UUIDs).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: pytest /app/backend/tests/backend_test.py -v. All tests are self-contained and clean up after themselves. After main agent fixes the analytics _id bug, re-run only TestArticles::test_click_and_analytics. All other modules (auth, mural pricing, sponsors, art, popups, comments) are fully green and can be used as regression. BASE_URL is read from REACT_APP_BACKEND_URL in /app/frontend/.env.",
+  "rca of the issue": "GET /api/articles/{id}/analytics returns `recent_activity: analytics[-50:]`, where `analytics = await db.analytics.find({'article_id': article_id}).to_list(1000)`. These documents contain a Mongo ObjectId `_id`. The endpoint has no response_model, so FastAPI's default jsonable_encoder runs on the raw list and raises 'TypeError: ObjectId object is not iterable' / 'vars() argument must have __dict__ attribute', surfaced as HTTP 500. Reproduction: create an article, POST /api/articles/{id}/click, then GET /api/articles/{id}/analytics → 500. Mitigation: change the find to `db.analytics.find({'article_id': article_id}, {'_id': 0}).to_list(1000)` OR post-process each doc to delete '_id'."
+}

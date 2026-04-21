@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
@@ -6,8 +7,12 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Card } from '../components/ui/card';
 import { useToast } from '../hooks/use-toast';
+import api from '../lib/api';
+
+const categories = ['news', 'arts', 'opinion', 'sports', 'poetry', 'science', 'quick thought'];
 
 const SubmitStoryPage = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     category: 'news',
@@ -15,39 +20,37 @@ const SubmitStoryPage = () => {
     description: '',
     content: '',
     author: '',
-    grade: ''
+    grade: '',
   });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  const categories = ['news', 'arts', 'opinion', 'sports', 'poetry', 'science', 'quick thought'];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // For now, just show success message (will connect to backend later)
+      let image_url = '';
+      if (image) {
+        const fd = new FormData();
+        fd.append('file', image);
+        const upRes = await api.post('/articles/upload-image', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        image_url = upRes.data.image_url;
+      }
+
+      await api.post('/articles', { ...formData, image_url });
       toast({
-        title: "Story Submitted!",
-        description: "Your story has been submitted for review.",
+        title: 'Story submitted!',
+        description: 'Thanks! Your story is now available for our editors.',
       });
-      
-      // Reset form
-      setFormData({
-        category: 'news',
-        title: '',
-        description: '',
-        content: '',
-        author: '',
-        grade: ''
-      });
-      setImage(null);
-    } catch (error) {
+      navigate('/articles');
+    } catch (err) {
       toast({
-        title: "Error",
-        description: "Failed to submit story. Please try again.",
-        variant: "destructive"
+        title: 'Submission failed',
+        description: err?.response?.data?.detail || 'Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -57,7 +60,7 @@ const SubmitStoryPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Submit Your Story</h1>
@@ -68,94 +71,97 @@ const SubmitStoryPage = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <label className="block text-sm font-semibold mb-2">Category</label>
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   required
+                  data-testid="submit-category-select"
                 >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Author Name</label>
+                <label className="block text-sm font-semibold mb-2">Author Name</label>
                 <Input
                   value={formData.author}
-                  onChange={(e) => setFormData({...formData, author: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                   placeholder="Your name"
                   required
+                  data-testid="submit-author-input"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Grade (Optional)</label>
+              <label className="block text-sm font-semibold mb-2">Grade (Optional)</label>
               <Input
                 value={formData.grade}
-                onChange={(e) => setFormData({...formData, grade: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
                 placeholder="e.g., 5th Grade"
+                data-testid="submit-grade-input"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Story Title</label>
+              <label className="block text-sm font-semibold mb-2">Story Title</label>
               <Input
                 value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                placeholder="Enter your story title"
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
+                data-testid="submit-title-input"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Short Description</label>
+              <label className="block text-sm font-semibold mb-2">Short Description</label>
               <Textarea
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="A brief description of your story"
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
                 required
+                data-testid="submit-description-input"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Full Story</label>
+              <label className="block text-sm font-semibold mb-2">Full Story</label>
               <Textarea
                 value={formData.content}
-                onChange={(e) => setFormData({...formData, content: e.target.value})}
-                placeholder="Write your full story here..."
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={10}
                 required
+                data-testid="submit-content-input"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Story Image (Optional)</label>
+              <label className="block text-sm font-semibold mb-2">Story Image (Optional)</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setImage(e.target.files[0])}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                data-testid="submit-image-input"
               />
             </div>
 
             <div className="flex gap-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="bg-blue-700 text-white hover:bg-blue-800 flex-1"
                 disabled={loading}
+                data-testid="submit-story-btn"
               >
-                {loading ? 'Submitting...' : 'Submit Story'}
+                {loading ? 'Submitting…' : 'Submit Story'}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={() => window.history.back()}
-              >
+              <Button type="button" variant="outline" onClick={() => window.history.back()}>
                 Cancel
               </Button>
             </div>

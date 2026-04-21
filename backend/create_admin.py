@@ -1,3 +1,4 @@
+from datetime import datetime
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from auth_models import get_password_hash, ROLE_PERMISSIONS
@@ -14,14 +15,8 @@ async def create_admin_user():
     client = AsyncIOMotorClient(mongo_url)
     db = client[os.environ['DB_NAME']]
     
-    # Check if admin already exists
-    existing_admin = await db.users.find_one({"email": "admin@calusaschool.org"})
-    
-    if existing_admin:
-        print("Admin user already exists!")
-        return
-    
-    # Create admin user
+    # Idempotent: upsert admin so credentials are always valid
+    now = datetime.utcnow()
     admin_user = {
         "id": "admin-001",
         "email": "admin@calusaschool.org",
@@ -30,16 +25,37 @@ async def create_admin_user():
         "role": "admin",
         "permissions": ROLE_PERMISSIONS["admin"],
         "is_active": True,
-        "created_at": None,
-        "last_login": None
+        "created_at": now,
+        "last_login": None,
     }
-    
-    await db.users.insert_one(admin_user)
-    print("✓ Admin user created successfully!")
-    print("\n=== LOGIN CREDENTIALS ===")
+
+    await db.users.update_one(
+        {"email": admin_user["email"]},
+        {
+            "$set": {
+                "hashed_password": admin_user["hashed_password"],
+                "full_name": admin_user["full_name"],
+                "role": admin_user["role"],
+                "permissions": admin_user["permissions"],
+                "is_active": True,
+            },
+            "$setOnInsert": {
+                "id": admin_user["id"],
+                "email": admin_user["email"],
+                "created_at": now,
+                "last_login": None,
+            },
+        },
+        upsert=True,
+    )
+    # Ensure created_at exists even on previously-seeded records
+    await db.users.update_one(
+        {"email": admin_user["email"], "created_at": None},
+        {"$set": {"created_at": now}},
+    )
+    print("Admin user ensured.")
     print("Email: admin@calusaschool.org")
     print("Password: Calusa2024!")
-    print("========================\n")
     
     client.close()
 

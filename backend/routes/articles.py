@@ -89,6 +89,22 @@ async def delete_article(article_id: str):
     
     return {"message": "Article deleted successfully"}
 
+@router.post("/upload-image")
+async def upload_image_standalone(file: UploadFile = File(...)):
+    """Upload an image and get back a URL. Useful for new article creation flow."""
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    file_extension = file.filename.split(".")[-1]
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = UPLOADS_DIR / unique_filename
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return {"image_url": f"/api/uploads/articles/{unique_filename}"}
+
+
 @router.post("/{article_id}/upload-image")
 async def upload_article_image(article_id: str, file: UploadFile = File(...)):
     # Validate file type
