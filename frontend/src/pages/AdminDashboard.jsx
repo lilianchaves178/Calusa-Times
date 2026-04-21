@@ -195,6 +195,15 @@ const AdminDashboard = () => {
       testId: 'section-contact',
     },
     {
+      title: 'Parent Resources',
+      icon: Users,
+      description: 'PTA links, portals, group chats, forms',
+      color: 'bg-fuchsia-600',
+      link: '/admin/parent-resources',
+      count: 'Manage',
+      testId: 'section-parent-resources',
+    },
+    {
       title: 'Events Calendar',
       icon: CalendarDays,
       description: 'Schedule events for the calendar + ticker',

@@ -1,17 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Info, MapPin, Phone, Mail, Globe, Clock, Star, Instagram } from 'lucide-react';
+import {
+  Info, MapPin, Phone, Mail, Globe, Clock, Star, Instagram,
+  Users, MessagesSquare, FileText, HeartHandshake, ExternalLink, BookOpen,
+} from 'lucide-react';
 import api, { assetUrl } from '../lib/api';
+
+const CATEGORY_META = {
+  PTA: { Icon: HeartHandshake, accent: 'bg-pink-100 text-pink-800 border-pink-200' },
+  INFO: { Icon: BookOpen, accent: 'bg-blue-100 text-blue-800 border-blue-200' },
+  CHAT: { Icon: MessagesSquare, accent: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  FORMS: { Icon: FileText, accent: 'bg-amber-100 text-amber-800 border-amber-200' },
+  VOLUNTEER: { Icon: Users, accent: 'bg-violet-100 text-violet-800 border-violet-200' },
+  OTHER: { Icon: Info, accent: 'bg-slate-100 text-slate-800 border-slate-200' },
+};
 
 const SchoolInfoPage = () => {
   const [info, setInfo] = useState(null);
+  const [resources, setResources] = useState([]);
 
   useEffect(() => {
     api
       .get('/school-info')
       .then((res) => setInfo(res.data))
       .catch(() => setInfo(null));
+    api
+      .get('/parent-resources')
+      .then((res) => setResources(res.data || []))
+      .catch(() => setResources([]));
   }, []);
 
   if (!info) {
@@ -150,6 +167,51 @@ const SchoolInfoPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Parent Resources */}
+        {resources.length > 0 && (
+          <section className="mt-12" data-testid="parent-resources-section">
+            <div className="flex items-center gap-3 mb-4">
+              <Users size={28} className="text-[#0f1e42]" />
+              <h2 className="text-3xl font-black text-[#0f1e42]">Parent Resources</h2>
+            </div>
+            <p className="text-gray-600 mb-6 max-w-2xl">
+              Your one-stop hub for everything Calusa families need — PTA updates, parent portals, group chats, forms, and ways to get involved.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {resources.map((r) => {
+                const meta = CATEGORY_META[r.category] || CATEGORY_META.OTHER;
+                const ChipIcon = meta.Icon;
+                const CardWrap = r.url ? 'a' : 'div';
+                const cardProps = r.url
+                  ? { href: r.url, target: '_blank', rel: 'noopener noreferrer' }
+                  : {};
+                return (
+                  <CardWrap
+                    key={r.id}
+                    {...cardProps}
+                    className={`group block bg-white rounded-2xl border-2 ${meta.accent.split(' ').pop()} p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all`}
+                    data-testid={`parent-resource-${r.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border ${meta.accent}`}>
+                        <ChipIcon size={11} />
+                        {r.category}
+                      </span>
+                      {r.url && (
+                        <ExternalLink size={14} className="text-gray-400 group-hover:text-[#0f1e42] transition-colors" />
+                      )}
+                    </div>
+                    <h3 className="font-bold text-[#0f1e42] text-lg leading-tight mb-1">{r.title}</h3>
+                    {r.description && (
+                      <p className="text-sm text-gray-600 leading-snug">{r.description}</p>
+                    )}
+                  </CardWrap>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       <Footer />

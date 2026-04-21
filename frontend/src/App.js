@@ -30,6 +30,7 @@ import ContactPage from "./pages/ContactPage";
 import PrintPage from "./pages/PrintPage";
 import EventsPage from "./pages/EventsPage";
 import AdminEventsPage from "./pages/AdminEventsPage";
+import AdminParentResourcesPage from "./pages/AdminParentResourcesPage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
 import SponsorsPage from "./pages/SponsorsPage";
@@ -99,6 +100,7 @@ function App() {
           <Route path="/admin/contact" element={<Protected permission="edit"><AdminContactPage /></Protected>} />
           <Route path="/admin/print" element={<Protected permission="edit"><AdminPrintPage /></Protected>} />
           <Route path="/admin/events" element={<Protected permission="edit"><AdminEventsPage /></Protected>} />
+          <Route path="/admin/parent-resources" element={<Protected permission="edit"><AdminParentResourcesPage /></Protected>} />
         </Routes>
       </BrowserRouter>
       <Toaster />
