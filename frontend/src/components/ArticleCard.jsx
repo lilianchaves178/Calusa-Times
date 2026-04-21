@@ -18,19 +18,22 @@ const ArticleCard = ({ article, featured = false }) => {
         featured ? 'ring-4 ring-yellow-400' : ''
       }`}>
         {article.image && (
-          <div className="relative h-48 overflow-hidden bg-gray-50 flex items-center justify-center">
+          <div className={`relative overflow-hidden bg-gray-100 ${featured ? 'h-80' : 'h-48'}`}>
             <img
               src={article.image}
               alt={article.title}
-              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform hover:scale-105"
+              className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
               loading="lazy"
             />
             {featured && (
-              <div className="absolute top-3 left-3">
-                <span className="inline-block bg-yellow-400 text-blue-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                  ⭐ Featured Story
-                </span>
-              </div>
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute top-4 left-4">
+                  <span className="inline-block bg-yellow-400 text-blue-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                    ⭐ Featured Story
+                  </span>
+                </div>
+              </>
             )}
           </div>
         )}
