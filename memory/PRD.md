@@ -82,6 +82,12 @@ See `/app/memory/test_credentials.md`.
 - Frontend (`AdminAchievementsPage.jsx`): new "Picture (optional)" block in the edit form with file input, Pexels "Browse free images" button, live preview, and a small × to remove. Row list swaps the trophy disc for a 56px thumbnail when an image is set. Homepage `AchievementsSection` uses a circular photo avatar when present; `AchievementsPage` renders a 16:10 hero image at the top of the card when present and collapses the ribbon slot.
 - Verified end-to-end via curl (create + file upload + Pexels import) and UI screenshot of the admin form. Falls back to the ribbon icon whenever `image_url` is empty, so existing rows without photos are unaffected.
 
+### Iteration 10 (Feb 22, 2026)
+- 🎞 **Photo of the Week — multi-source mix**: the homepage slideshow now aggregates fresh imagery from **articles**, **achievements**, **student art**, and **spotlight** submissions (previously articles only). Each slide carries a coloured source chip: STEM-blue "NEWS" etc. for articles, gold `🏆 ACHIEVEMENT`, pink `🎨 STUDENT ART`, purple `✨ SPOTLIGHT`. Clicking routes to the right destination (`/article/:id`, `/achievements`, `/student-art`, `/spotlight`). Each photo has a context-aware subtitle ("Awarded to …", "By …", etc.).
+- Backend: `GET /api/articles/photos-of-the-week` still at the same path but now returns `{photos: [{source, link, title, subtitle, category, image_url, date}]}` merged from 4 collections, filtered to approved/active items with non-empty image_url, preferring the last 14 days and backfilling with older items. De-dupes by image URL.
+- Frontend: `PhotoOfTheWeek.jsx` rewritten to render `source`-specific chips + icons (Newspaper / Trophy / Palette / Sparkles). Testids `potw-chip-article|achievement|art|spotlight` for easy QA.
+- Smoke-tested: `{'achievement': 1, 'spotlight': 2, 'art': 1, 'article': 3}` returned by the API; playwright cycling confirmed all four chip types render.
+
 ## Backlog
 ### P1
 - **Verify `calusaschool.org` domain in Resend** so notifications can reach every admin account (not just `lilian.chaves1@gmail.com`). Step-by-step: Resend Dashboard → Domains → Add Domain → add DNS TXT/MX records → update `SENDER_EMAIL` in `.env` to e.g. `news@calusaschool.org`.

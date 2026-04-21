@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, Trophy, Palette, Sparkles, Newspaper } from 'lucide-react';
 import api, { assetUrl } from '../lib/api';
 
 const ROTATE_MS = 5000;
+
+// Chip metadata per source. `label` falls back to the entry.category otherwise.
+const SOURCE_META = {
+  article: { Icon: Newspaper, label: null, accent: 'bg-blue-600 text-white' },
+  achievement: { Icon: Trophy, label: 'ACHIEVEMENT', accent: 'bg-[#FFD700] text-[#0f1e42]' },
+  art: { Icon: Palette, label: 'STUDENT ART', accent: 'bg-pink-500 text-white' },
+  spotlight: { Icon: Sparkles, label: 'SPOTLIGHT', accent: 'bg-purple-600 text-white' },
+};
 
 const PhotoOfTheWeek = () => {
   const [photos, setPhotos] = useState([]);
@@ -38,6 +46,12 @@ const PhotoOfTheWeek = () => {
   if (loading || photos.length === 0) return null;
 
   const current = photos[idx];
+  const source = current.source || 'article';
+  const meta = SOURCE_META[source] || SOURCE_META.article;
+  const chipLabel = (meta.label || current.category || 'calusa').toUpperCase();
+  const href = current.link || (current.article_id ? `/article/${current.article_id}` : '/');
+  const ChipIcon = meta.Icon;
+
   const prev = () => setIdx((i) => (i - 1 + photos.length) % photos.length);
   const next = () => setIdx((i) => (i + 1) % photos.length);
 
@@ -57,7 +71,7 @@ const PhotoOfTheWeek = () => {
       </div>
 
       <Link
-        to={`/article/${current.article_id}`}
+        to={href}
         className="group block relative overflow-hidden rounded-2xl border-4 border-[#0f1e42] bg-black shadow-lg"
         data-testid="photo-of-the-week-link"
       >
@@ -72,15 +86,24 @@ const PhotoOfTheWeek = () => {
 
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-6 py-4 text-white">
           <div className="flex items-end gap-3 flex-wrap">
-            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.15em] bg-[#FFD700] text-[#0f1e42] px-2 py-0.5 rounded">
-              {current.category || 'calusa'}
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded ${meta.accent}`}
+              data-testid={`potw-chip-${source}`}
+            >
+              <ChipIcon size={11} />
+              {chipLabel}
             </span>
             <h3 className="text-lg md:text-xl font-bold leading-snug flex-1 min-w-[60%]">
               {current.title}
             </h3>
           </div>
-          {current.author && (
-            <p className="text-xs text-white/80 mt-1">By {current.author}</p>
+          {current.subtitle && (
+            <p className="text-xs text-white/80 mt-1">
+              {source === 'achievement' ? `Awarded to ${current.subtitle}` :
+               source === 'art' ? `By ${current.subtitle}` :
+               source === 'spotlight' ? current.subtitle :
+               `By ${current.subtitle}`}
+            </p>
           )}
         </div>
 

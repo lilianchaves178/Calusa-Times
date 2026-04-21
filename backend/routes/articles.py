@@ -55,17 +55,23 @@ async def get_all_articles_admin(_=Depends(require_permission("edit"))):
 
 @router.get("/photos-of-the-week")
 async def get_photos_of_the_week(limit: int = 8):
-    """Flatten approved-article images into a small slideshow-friendly list.
+    """Aggregate fresh imagery from across the site for the homepage slideshow.
 
-    Prefers articles from the last 14 days; if fewer than ``limit`` photos are
-    found there, backfills with the most recent approved articles.
+    Pulls photos (preferring the last 14 days, then backfilling) from:
+      • approved articles (each image in ``images`` + fallback ``image_url``)
+      • active achievements with an ``image_url``
+      • approved student art submissions
+      • approved + active student spotlight entries
+
+    Each photo carries a ``source`` label so the frontend can tag and link to
+    the right destination page.
     """
     limit = max(1, min(limit, 20))
     recent_cutoff = datetime.utcnow() - timedelta(days=14)
 
-    def flatten(article_docs):
+    def _art_entries(docs):
         out = []
-        for a in article_docs:
+        for a in docs:
             photos = list(a.get("images") or [])
             if a.get("image_url") and a["image_url"] not in photos:
                 photos.insert(0, a["image_url"])
@@ -73,28 +79,134 @@ async def get_photos_of_the_week(limit: int = 8):
                 if not url:
                     continue
                 out.append({
+                    "source": "article",
                     "article_id": a["id"],
+                    "link": f"/article/{a['id']}",
                     "title": a["title"],
-                    "author": a.get("author"),
+                    "subtitle": a.get("author"),
                     "category": a.get("category"),
                     "image_url": url,
                     "date": a.get("date"),
                 })
         return out
 
-    primary = await db.articles.find(
-        {"approved": True, "date": {"$gte": recent_cutoff}},
-        {"_id": 0},
+    def _achievement_entries(docs):
+        return [
+            {
+                "source": "achievement",
+                "link": "/achievements",
+                "title": d["title"],
+                "subtitle": d.get("recipient"),
+                "category": d.get("category"),
+                "image_url": d["image_url"],
+                "date": d.get("date") or d.get("created_at"),
+            }
+            for d in docs
+            if d.get("image_url")
+        ]
+
+    def _art_submission_entries(docs):
+        return [
+            {
+                "source": "art",
+                "link": "/student-art",
+                "title": d["title"],
+                "subtitle": d.get("artist_name"),
+                "category": "STUDENT ART",
+                "image_url": d["image_url"],
+                "date": d.get("created_at"),
+            }
+            for d in docs
+            if d.get("image_url")
+        ]
+
+    def _spotlight_entries(docs):
+        return [
+            {
+                "source": "spotlight",
+                "link": "/spotlight",
+                "title": d["name"],
+                "subtitle": d.get("grade") or "Student Spotlight",
+                "category": "SPOTLIGHT",
+                "image_url": d["image_url"],
+                "date": d.get("created_at"),
+            }
+            for d in docs
+            if d.get("image_url")
+        ]
+
+    # --- gather from all sources -------------------------------------------------
+    fresh = []
+
+    articles_recent = await db.articles.find(
+        {"approved": True, "date": {"$gte": recent_cutoff}}, {"_id": 0}
     ).sort("date", -1).to_list(60)
+    fresh.extend(_art_entries(articles_recent))
 
-    photos = flatten(primary)[:limit]
+    achievements_recent = await db.achievements.find(
+        {"is_active": True, "image_url": {"$nin": [None, ""]},
+         "created_at": {"$gte": recent_cutoff}},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(60)
+    fresh.extend(_achievement_entries(achievements_recent))
 
+    art_recent = await db.art_submissions.find(
+        {"approved": True, "image_url": {"$nin": [None, ""]},
+         "created_at": {"$gte": recent_cutoff}},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(60)
+    fresh.extend(_art_submission_entries(art_recent))
+
+    spotlight_recent = await db.spotlight.find(
+        {"approved": True, "is_active": True, "image_url": {"$nin": [None, ""]},
+         "created_at": {"$gte": recent_cutoff}},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(60)
+    fresh.extend(_spotlight_entries(spotlight_recent))
+
+    # Newest first, trimmed to limit
+    fresh.sort(key=lambda p: p.get("date") or datetime.min, reverse=True)
+    photos = fresh[:limit]
+
+    # --- backfill if we're short ------------------------------------------------
     if len(photos) < limit:
-        backfill = await db.articles.find(
-            {"approved": True, "date": {"$lt": recent_cutoff}},
-            {"_id": 0},
+        used_urls = {p["image_url"] for p in photos}
+        older = []
+
+        a_old = await db.articles.find(
+            {"approved": True, "date": {"$lt": recent_cutoff}}, {"_id": 0}
         ).sort("date", -1).to_list(60)
-        photos.extend(flatten(backfill)[: (limit - len(photos))])
+        older.extend(_art_entries(a_old))
+
+        ach_old = await db.achievements.find(
+            {"is_active": True, "image_url": {"$nin": [None, ""]},
+             "created_at": {"$lt": recent_cutoff}},
+            {"_id": 0},
+        ).sort("created_at", -1).to_list(60)
+        older.extend(_achievement_entries(ach_old))
+
+        art_old = await db.art_submissions.find(
+            {"approved": True, "image_url": {"$nin": [None, ""]},
+             "created_at": {"$lt": recent_cutoff}},
+            {"_id": 0},
+        ).sort("created_at", -1).to_list(60)
+        older.extend(_art_submission_entries(art_old))
+
+        sp_old = await db.spotlight.find(
+            {"approved": True, "is_active": True, "image_url": {"$nin": [None, ""]},
+             "created_at": {"$lt": recent_cutoff}},
+            {"_id": 0},
+        ).sort("created_at", -1).to_list(60)
+        older.extend(_spotlight_entries(sp_old))
+
+        older.sort(key=lambda p: p.get("date") or datetime.min, reverse=True)
+        for p in older:
+            if len(photos) >= limit:
+                break
+            if p["image_url"] in used_urls:
+                continue
+            photos.append(p)
+            used_urls.add(p["image_url"])
 
     return {"photos": photos}
 
