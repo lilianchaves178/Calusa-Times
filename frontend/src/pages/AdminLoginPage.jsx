@@ -71,6 +71,7 @@ const AdminLoginPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@calusaschool.org"
               required
+              data-testid="admin-email-input"
             />
           </div>
 
@@ -82,6 +83,7 @@ const AdminLoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
+              data-testid="admin-password-input"
             />
           </div>
 
@@ -89,6 +91,7 @@ const AdminLoginPage = () => {
             type="submit" 
             className="w-full bg-blue-700 text-white hover:bg-blue-800"
             disabled={loading}
+            data-testid="admin-login-submit"
           >
             {loading ? 'Logging in...' : 'Login'}
           </Button>

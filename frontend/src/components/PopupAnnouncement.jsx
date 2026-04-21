@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { X, Info, AlertTriangle, CheckCircle, Megaphone } from 'lucide-react';
 import api from '../lib/api';
 
 const PopupAnnouncement = () => {
   const [popups, setPopups] = useState([]);
   const [dismissedPopups, setDismissedPopups] = useState([]);
+  const location = useLocation();
+  const onAdminRoute = location.pathname.startsWith('/admin');
 
   useEffect(() => {
+    if (onAdminRoute) return;
     const dismissed = JSON.parse(localStorage.getItem('dismissedPopups') || '[]');
     setDismissedPopups(dismissed);
 
@@ -17,7 +21,7 @@ const PopupAnnouncement = () => {
         setPopups(active);
       })
       .catch(() => setPopups([]));
-  }, []);
+  }, [onAdminRoute]);
 
   const dismissPopup = (popupId, showOnce) => {
     setPopups((arr) => arr.filter((p) => p.id !== popupId));
@@ -55,6 +59,7 @@ const PopupAnnouncement = () => {
     }
   };
 
+  if (onAdminRoute) return null;
   if (popups.length === 0) return null;
 
   const popup = popups[0];

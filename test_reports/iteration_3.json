@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only E2E test of The Calusa Times CMS (iteration 3). Tested admin auth/route-protection, all admin CRUD pages (articles/users/sponsors/popups/comments/art/mural/analytics), and ALL public flows (home, articles + detail, sponsors, mural, student-art). Critical Post Message -> Givebacks tier-pricing flow verified end-to-end, including new-tab open to https://www.givebacks.com/causes/calusa/shop/items/50684, success card rendering with 'Pay $3 on Givebacks' link, and the new pending mural record appearing on /admin/mural. Popup-on-/admin regression passed (no popup renders on any /admin/* route, login unblocked). Added missing data-testid attributes to AdminLoginPage. All flows PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Public pages (Home / Articles / Mural / Sponsors / Post-Message)", "issues": ["Active popup dialog is a full-screen modal with z-50 + bg-black/50 overlay that blocks ALL pointer interactions until dismissed. UX-wise this is aggressive - cards, nav, and form inputs are unclickable until the user clicks 'Got it!'. Consider a dismissible toast/banner or lowering z-index to not cover the navbar."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional UX polish: popup modal blocks the entire public site (including nav & forms) until dismissed — downgrade to a less intrusive toast/banner or lower z-index so users can still navigate.",
+    "Optional cleanup: purge remaining TEST_-prefixed records created during frontend testing (TEST_Frontend_Article, TEST_Sponsor_FE, TEST_editor_fe@example.com user, TEST_FE_Parent3 mural message). They do not affect behaviour."
+  ],
+  "critical_code_review_comments": [
+    "RequireAuth.jsx correctly verifies JWT via /auth/me on mount and respects per-route permission. Good.",
+    "PopupAnnouncement.jsx correctly early-returns on /admin/* routes via useLocation().pathname.startsWith('/admin') — regression confirmed.",
+    "PostMessagePage Givebacks integration is correct: calls POST /api/mural, opens external Givebacks URL in new tab via window.open(..., '_blank', 'noopener,noreferrer'), and renders success card with the Givebacks link. Tier pricing ($3 plain / $5 featured) and external URL match spec exactly.",
+    "AdminLoginPage was missing data-testid attributes for email/password/submit — added data-testid='admin-email-input' / 'admin-password-input' / 'admin-login-submit'. Everywhere else testids are consistent.",
+    "No console errors or page crashes surfaced on any tested route."
+  ],
+  "updated_files": ["/app/frontend/src/pages/AdminLoginPage.jsx"],
+  "success_rate": {"backend": "not tested this iteration (iteration_2 = 100%)", "frontend": "100% of tested flows"},
+  "test_credentials": "admin@calusaschool.org / Calusa2024! (per /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created during this run and left in DB: article 'TEST_Frontend_Article' (id de5335ca-...), user 'TEST_editor_fe@example.com', sponsor 'TEST_Sponsor_FE', mural message from 'TEST_FE_Parent3' (pending). The TEST_Popup_FE popup was cleaned up via delete at end of run so it no longer blocks future tests.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login testids are now present on AdminLoginPage: admin-email-input / admin-password-input / admin-login-submit. Public site has an active seed popup ('Spring Art Show - April 21st!') that intercepts pointer events on / (and other public routes) — workaround when scripting: preseed localStorage.dismissedPopups with the popup id, or click [data-testid=\"popup-dismiss-btn\"] first. Popup is correctly suppressed on /admin/* so admin testing is unaffected. Dashboard counters use inline text like '3 articles' / '4 users' (no single articles-count testid) — use section testids instead. Backend suite /app/backend/tests/backend_test.py was 34/34 green on iteration_2.",
+  "rca of the issue": "No bugs found. All 19 requested frontend scenarios passed. The popup-overlay blocking pointer events on public pages is intentional design (full-screen modal) and not a regression — flagged as UX feedback only. The earlier login-block popup regression is fully fixed (PopupAnnouncement early-returns on /admin/*)."
+}
