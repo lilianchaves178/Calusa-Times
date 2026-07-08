@@ -44,7 +44,7 @@ All of these are **free to start**:
 | **Pexels** | Free stock-image search | ⚪ Optional | https://www.pexels.com/api/ |
 | **OpenAI / Anthropic / Gemini** | AI article summaries for the newspaper | ⚪ Optional | — see below — |
 
-> **About the AI summaries:** while on Emergent we used their Universal LLM Key. On your own hosting you need your own key. Swap in any one of: OpenAI (`openai` SDK), Anthropic (`anthropic` SDK), or Google Gemini. The summarizer lives at `backend/services/summarizer.py` — replace the `LlmChat` call with the SDK of your choice. If no key is set, the app still works (summaries just aren't generated; the newspaper falls back to the article description).
+> **About the AI summaries:** this no longer depends on Emergent at all. `backend/services/summarizer.py` uses `litellm` (already in `requirements.txt`) and auto-detects whichever key you set: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`/`GOOGLE_API_KEY` (checked in that order). Set just one of them in `backend/.env` — no code changes needed. If none are set, the app still works (summaries just aren't generated; the newspaper falls back to the article description).
 
 ---
 

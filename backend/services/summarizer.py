@@ -1,10 +1,10 @@
-"""AI summarizer powered by Emergent LLM Key (Claude Sonnet)."""
+"""AI summarizer — uses whichever provider key is configured (Anthropic, OpenAI, or Gemini)
+via litellm. No Emergent-specific dependency required."""
 from __future__ import annotations
 
 import logging
 import os
 import re
-import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -33,17 +33,31 @@ def _strip(text: str) -> str:
     return t
 
 
+def _pick_model() -> str | None:
+    """Pick a litellm model string based on whichever provider key is configured.
+    Preference order: Anthropic, OpenAI, Gemini."""
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic/claude-sonnet-4-5-20250929"
+    if os.environ.get("OPENAI_API_KEY"):
+        return "gpt-4o-mini"
+    if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+        return "gemini/gemini-1.5-flash"
+    return None
+
+
 async def summarize_article(title: str, body: str) -> str:
     """Return a 3-4 sentence summary of the article, or '' if unavailable."""
-    api_key = os.environ.get("EMERGENT_LLM_KEY")
-    if not api_key:
-        logger.info("EMERGENT_LLM_KEY not set — skipping AI summary")
+    model = _pick_model()
+    if not model:
+        logger.info(
+            "No AI summary key set (ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY) — skipping AI summary"
+        )
         return ""
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import litellm
     except Exception as exc:
-        logger.warning("emergentintegrations not importable: %s", exc)
+        logger.warning("litellm not importable: %s", exc)
         return ""
 
     # Truncate input so we don't waste tokens on huge texts
@@ -52,20 +66,22 @@ async def summarize_article(title: str, body: str) -> str:
         body_trim = body_trim[:4000]
 
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"summary-{uuid.uuid4().hex[:8]}",
-            system_message=_SYSTEM,
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-
-        msg = UserMessage(
-            text=(
-                f"Article title: {title}\n\n"
-                f"Article body:\n{body_trim}\n\n"
-                "Write the summary now."
-            )
+        response = await litellm.acompletion(
+            model=model,
+            messages=[
+                {"role": "system", "content": _SYSTEM},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Article title: {title}\n\n"
+                        f"Article body:\n{body_trim}\n\n"
+                        "Write the summary now."
+                    ),
+                },
+            ],
+            max_tokens=200,
         )
-        reply = await chat.send_message(msg)
+        reply = response.choices[0].message.content
         return _strip(reply or "")
     except Exception as exc:
         logger.warning("summarize_article failed: %s", exc)
