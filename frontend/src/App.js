@@ -8,6 +8,8 @@ import AchievementsPage from "./pages/AchievementsPage";
 import SchoolInfoPage from "./pages/SchoolInfoPage";
 import SubmitStoryPage from "./pages/SubmitStoryPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminArticlesPage from "./pages/AdminArticlesPage";
 import AdminArticleEditPage from "./pages/AdminArticleEditPage";
@@ -71,6 +73,8 @@ function App() {
 
           {/* Admin */}
           <Route path="/admin" element={<AdminLoginPage />} />
+          <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/admin/reset-password" element={<ResetPasswordPage />} />
           <Route path="/admin/dashboard" element={<Protected><AdminDashboard /></Protected>} />
 
           <Route path="/admin/articles" element={<Protected><AdminArticlesPage /></Protected>} />

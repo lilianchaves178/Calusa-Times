@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from auth_models import User, UserCreate, UserLogin, UserResponse, TokenResponse, ROLE_PERMISSIONS
+from auth_models import ForgotPasswordRequest, ResetPasswordRequest
 from auth_models import get_password_hash, verify_password
 from datetime import datetime, timedelta
 import jwt
 import os
+import secrets
+import logging
 from typing import List
+from services.email_service import send_password_reset_email
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer()
@@ -117,6 +123,63 @@ async def login(credentials: UserLogin):
             is_active=user["is_active"]
         )
     )
+
+@router.post("/forgot-password")
+async def forgot_password(payload: ForgotPasswordRequest):
+    """Always returns a generic success message, whether or not the email exists,
+    so this endpoint can't be used to discover which emails have accounts."""
+    generic_response = {
+        "message": "If an account exists for that email, a reset link has been sent."
+    }
+
+    user = await db.users.find_one({"email": payload.email})
+    if not user or not user.get("is_active", True):
+        return generic_response
+
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+
+    await db.password_resets.insert_one({
+        "token": token,
+        "user_id": user["id"],
+        "email": user["email"],
+        "expires_at": expires_at,
+        "used": False,
+        "created_at": datetime.utcnow(),
+    })
+
+    public_url = os.environ.get("PUBLIC_APP_URL", "http://localhost").rstrip("/")
+    reset_url = f"{public_url}/admin/reset-password?token={token}"
+
+    try:
+        await send_password_reset_email(user["email"], reset_url)
+    except Exception as exc:
+        logger.warning("Failed to send password reset email: %s", exc)
+
+    return generic_response
+
+
+@router.post("/reset-password")
+async def reset_password(payload: ResetPasswordRequest):
+    record = await db.password_resets.find_one({"token": payload.token})
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    if record.get("used"):
+        raise HTTPException(status_code=400, detail="This reset link has already been used")
+    if record["expires_at"] < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="This reset link has expired")
+
+    await db.users.update_one(
+        {"id": record["user_id"]},
+        {"$set": {"hashed_password": get_password_hash(payload.new_password)}}
+    )
+    await db.password_resets.update_one(
+        {"token": payload.token},
+        {"$set": {"used": True}}
+    )
+
+    return {"message": "Password reset successfully. You can now log in with your new password."}
+
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):

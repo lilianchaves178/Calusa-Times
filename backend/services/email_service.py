@@ -82,6 +82,43 @@ def fire_and_forget(coro) -> None:
         asyncio.run(coro)
 
 
+def _render_plain(title: str, body_html: str, cta_label: str, cta_url_absolute: str, footer: str) -> str:
+    """Like _render_template, but takes a fully-formed CTA URL and a custom footer
+    (used for user-facing emails like password reset, not admin notifications)."""
+    return f"""
+    <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #f7fafc; padding: 24px; border-radius: 12px;">
+      <div style="background: #0f1e42; color: #fff; padding: 20px 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 20px; font-weight: 800;">The Calusa Times</h1>
+      </div>
+      <div style="background: #fff; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
+        <h2 style="margin: 0 0 12px; font-size: 18px; color: #0f1e42;">{title}</h2>
+        <div style="font-size: 14px; color: #334155; line-height: 1.6;">
+          {body_html}
+        </div>
+        <div style="margin-top: 24px;">
+          <a href="{cta_url_absolute}" style="display: inline-block; background: #0f1e42; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">{cta_label}</a>
+        </div>
+        <p style="margin-top: 24px; font-size: 12px; color: #64748b;">{footer}</p>
+      </div>
+    </div>
+    """
+
+
+async def send_password_reset_email(to_email: str, reset_url: str) -> None:
+    """Send a password reset link to a single admin/editor user."""
+    if not is_enabled():
+        logger.info("RESEND_API_KEY not set — skipping password reset email (link: %s)", reset_url)
+        return
+    subject = "Reset your Calusa Times admin password"
+    body = (
+        "<p>We received a request to reset the password for your Calusa Times admin account.</p>"
+        "<p>Click the button below to choose a new password. This link expires in 1 hour.</p>"
+    )
+    footer = "If you didn't request this, you can safely ignore this email — your password won't change."
+    html = _render_plain(subject, body, "Reset Password", reset_url, footer)
+    await _send_to([to_email], subject, html)
+
+
 async def notify_new_mural_message(db, message: dict) -> None:
     if not is_enabled():
         return

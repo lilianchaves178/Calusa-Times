@@ -58,7 +58,7 @@ MONGO_URL=mongodb+srv://USER:PASS@cluster.mongodb.net
 DB_NAME=calusa_times
 
 # === Auth (required) ===
-JWT_SECRET=change-me-to-a-long-random-string-at-least-32-chars
+JWT_SECRET_KEY=change-me-to-a-long-random-string-at-least-32-chars
 ADMIN_EMAIL=admin@calusaschool.org
 ADMIN_PASSWORD=ChangeThisToASecurePassword!
 
@@ -66,11 +66,11 @@ ADMIN_PASSWORD=ChangeThisToASecurePassword!
 UPLOADS_DIR=/app/uploads
 
 # === Email notifications (optional) ===
+# Powers admin notifications AND the "forgot password" reset email.
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
-RESEND_FROM_EMAIL=noreply@yourdomain.com
-RESEND_FROM_NAME=The Calusa Times
-# comma-separated fallback if no admin emails are set:
-DEFAULT_ADMIN_EMAILS=you@yourdomain.com
+SENDER_EMAIL=noreply@yourdomain.com
+# Base URL used to build links inside emails (e.g. https://yourdomain.com):
+PUBLIC_APP_URL=https://yourdomain.com
 
 # === Pexels free-image search (optional) ===
 PEXELS_API_KEY=sfuH8ZEzFn...
