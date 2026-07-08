@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
 import { useToast } from '../hooks/use-toast';
-import { Shield } from 'lucide-react';
+import { Shield, Home } from 'lucide-react';
 
 const AdminLoginPage = () => {
   const navigate = useNavigate();
@@ -52,7 +52,15 @@ const AdminLoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-6">
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-6">
+      <Link
+        to="/"
+        className="absolute top-6 left-6 inline-flex items-center gap-2 text-sm font-semibold text-white/90 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
+        data-testid="admin-login-home-button"
+      >
+        <Home size={16} />
+        Home
+      </Link>
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-700 rounded-full mb-4">
