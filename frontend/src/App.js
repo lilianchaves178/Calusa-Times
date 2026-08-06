@@ -37,7 +37,6 @@ import AdminParentResourcesPage from "./pages/AdminParentResourcesPage";
 import ParentResourcePage from "./pages/ParentResourcePage";
 import StudentArtPage from "./pages/StudentArtPage";
 import SubmitArtPage from "./pages/SubmitArtPage";
-import SponsorsPage from "./pages/SponsorsPage";
 import MuralPage from "./pages/MuralPage";
 import PostMessagePage from "./pages/PostMessagePage";
 import PopupAnnouncement from "./components/PopupAnnouncement";
@@ -65,7 +64,6 @@ function App() {
           <Route path="/submit-story" element={<SubmitStoryPage />} />
           <Route path="/student-art" element={<StudentArtPage />} />
           <Route path="/submit-art" element={<SubmitArtPage />} />
-          <Route path="/sponsors" element={<SponsorsPage />} />
           <Route path="/mural" element={<MuralPage />} />
           <Route path="/post-message" element={<PostMessagePage />} />
           <Route path="/contact" element={<ContactPage />} />
