@@ -128,11 +128,11 @@ const ParentResourcePage = () => {
         ) : (
           <article className="bg-white rounded-2xl shadow-sm overflow-hidden" data-testid={`resource-page-${category}`}>
             {page.hero_image_url ? (
-              <div className="w-full aspect-[16/6] bg-gray-100 overflow-hidden">
+              <div className="w-full bg-[#0f1e42] overflow-hidden">
                 <img
                   src={assetUrl(page.hero_image_url)}
                   alt={page.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto max-h-[420px] object-contain mx-auto"
                 />
               </div>
             ) : (
