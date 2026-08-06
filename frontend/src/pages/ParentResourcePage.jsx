@@ -128,11 +128,11 @@ const ParentResourcePage = () => {
 
       <main className="max-w-4xl mx-auto px-6 py-10">
         <Link
-          to="/school-info"
+          to="/pta-corner"
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#0f1e42] mb-6"
           data-testid="back-to-info-btn"
         >
-          <ArrowLeft size={14} /> Back to Parent Resources
+          <ArrowLeft size={14} /> Back to PTA Corner
         </Link>
 
         {loading ? (
