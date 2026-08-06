@@ -20,18 +20,20 @@ const CATEGORY_META = {
  * Mini markdown renderer. Supports:
  *   - blank-line-separated paragraphs
  *   - **bold** and [text](url) inline
+ *   - bare URLs (https://...) auto-linked, no markdown syntax needed
  *   - bullet lists starting with `- `
  *   - headings starting with `**text**` on a line by themselves become <h3>
  */
 const renderInline = (text) => {
   const parts = [];
   let i = 0;
-  const regex = /(\*\*([^*]+)\*\*)|(\[([^\]]+)\]\(([^)]+)\))/g;
+  const regex = /(\*\*([^*]+)\*\*)|(\[([^\]]+)\]\(([^)]+)\))|(https?:\/\/[^\s<]+)/g;
   let m;
   while ((m = regex.exec(text)) !== null) {
     if (m.index > i) parts.push(text.slice(i, m.index));
-    if (m[1]) parts.push(<strong key={m.index}>{m[2]}</strong>);
-    else if (m[3]) {
+    if (m[1]) {
+      parts.push(<strong key={m.index}>{m[2]}</strong>);
+    } else if (m[3]) {
       const href = m[5];
       const label = m[4];
       const isExternal = /^https?:\/\//.test(href);
@@ -42,6 +44,20 @@ const renderInline = (text) => {
           <Link key={m.index} to={href} className="text-[#0f1e42] font-semibold underline underline-offset-2 hover:text-yellow-700">{label}</Link>
         )
       );
+    } else if (m[6]) {
+      // Bare URL pasted directly into the text — auto-link it, but don't
+      // swallow trailing punctuation like a period or closing parenthesis.
+      let url = m[6];
+      let trailing = '';
+      const trailingMatch = url.match(/[.,;:!?)\]"']+$/);
+      if (trailingMatch) {
+        trailing = trailingMatch[0];
+        url = url.slice(0, url.length - trailing.length);
+      }
+      parts.push(
+        <a key={m.index} href={url} target="_blank" rel="noopener noreferrer" className="text-[#0f1e42] font-semibold underline underline-offset-2 hover:text-yellow-700">{url}</a>
+      );
+      if (trailing) parts.push(trailing);
     }
     i = m.index + m[0].length;
   }
