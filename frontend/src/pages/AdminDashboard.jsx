@@ -17,6 +17,7 @@ import {
   Mail,
   Printer,
   CalendarDays,
+  Camera,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -166,6 +167,15 @@ const AdminDashboard = () => {
       link: '/admin/spotlight',
       count: 'Manage',
       testId: 'section-spotlight',
+    },
+    {
+      title: 'Photo of the Week',
+      icon: Camera,
+      description: 'Pin one homepage photo, or leave it auto-rotating',
+      color: 'bg-[#0f1e42]',
+      link: '/admin/photo-of-week',
+      count: 'Manage',
+      testId: 'section-photo-of-week',
     },
     {
       title: 'Achievements',

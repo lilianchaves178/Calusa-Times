@@ -68,6 +68,24 @@ async def get_photos_of_the_week(limit: int = 8):
     the right destination page.
     """
     limit = max(1, min(limit, 20))
+
+    # A manually pinned photo (set at /admin/photo-of-week) always wins —
+    # short-circuit the auto-aggregation below entirely when one is set.
+    pinned = await db.photo_of_week.find_one({"id": "current"}, {"_id": 0})
+    if pinned:
+        return {
+            "photos": [{
+                "source": "pinned",
+                "link": pinned.get("link") or "/",
+                "title": pinned["title"],
+                "subtitle": pinned.get("subtitle"),
+                "category": "PHOTO OF THE WEEK",
+                "image_url": pinned["image_url"],
+                "date": pinned.get("updated_at"),
+            }],
+            "pinned": True,
+        }
+
     recent_cutoff = datetime.utcnow() - timedelta(days=14)
 
     def _art_entries(docs):

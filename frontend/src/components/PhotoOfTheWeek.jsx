@@ -11,6 +11,7 @@ const SOURCE_META = {
   achievement: { Icon: Trophy, label: 'ACHIEVEMENT', accent: 'bg-[#FFD700] text-[#0f1e42]' },
   art: { Icon: Palette, label: 'STUDENT ART', accent: 'bg-pink-500 text-white' },
   spotlight: { Icon: Sparkles, label: 'SPOTLIGHT', accent: 'bg-purple-600 text-white' },
+  pinned: { Icon: Camera, label: null, accent: 'bg-[#0f1e42] text-[#FFD700]' },
 };
 
 const PhotoOfTheWeek = () => {
@@ -65,9 +66,11 @@ const PhotoOfTheWeek = () => {
       <div className="flex items-center gap-2 mb-4">
         <Camera className="text-[#0f1e42]" size={22} />
         <h2 className="text-2xl font-bold text-gray-900">Photo of the Week</h2>
-        <span className="ml-auto text-xs text-gray-500 uppercase tracking-wide">
-          Auto-rotating · {idx + 1}/{photos.length}
-        </span>
+        {photos.length > 1 && (
+          <span className="ml-auto text-xs text-gray-500 uppercase tracking-wide">
+            Auto-rotating · {idx + 1}/{photos.length}
+          </span>
+        )}
       </div>
 
       <Link

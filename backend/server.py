@@ -8,6 +8,7 @@ from pathlib import Path
 
 # Import routes
 from routes import articles, comments, uploads, auth, art, sponsors, popups, mural, content, pexels, contact, subscriptions, events, parent_resources, parent_resource_pages
+from routes.content import photo_week_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -50,6 +51,7 @@ app.include_router(mural.router)
 app.include_router(content.spotlight_router)
 app.include_router(content.achievements_router)
 app.include_router(content.school_info_router)
+app.include_router(photo_week_router)
 app.include_router(pexels.router)
 app.include_router(contact.router)
 app.include_router(subscriptions.router)

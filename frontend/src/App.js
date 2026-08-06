@@ -25,6 +25,7 @@ import AdminMuralPage from "./pages/AdminMuralPage";
 import AdminPopupsPage from "./pages/AdminPopupsPage";
 import AdminPopupEditPage from "./pages/AdminPopupEditPage";
 import AdminSpotlightPage from "./pages/AdminSpotlightPage";
+import AdminPhotoOfWeekPage from "./pages/AdminPhotoOfWeekPage";
 import AdminAchievementsPage from "./pages/AdminAchievementsPage";
 import AdminSchoolInfoPage from "./pages/AdminSchoolInfoPage";
 import AdminContactPage from "./pages/AdminContactPage";
@@ -101,6 +102,7 @@ function App() {
           <Route path="/admin/analytics" element={<Protected><AdminAnalyticsPage /></Protected>} />
 
           <Route path="/admin/spotlight" element={<Protected permission="edit"><AdminSpotlightPage /></Protected>} />
+          <Route path="/admin/photo-of-week" element={<Protected permission="edit"><AdminPhotoOfWeekPage /></Protected>} />
           <Route path="/admin/achievements" element={<Protected permission="edit"><AdminAchievementsPage /></Protected>} />
           <Route path="/admin/school-info" element={<Protected permission="edit"><AdminSchoolInfoPage /></Protected>} />
           <Route path="/admin/contact" element={<Protected permission="edit"><AdminContactPage /></Protected>} />

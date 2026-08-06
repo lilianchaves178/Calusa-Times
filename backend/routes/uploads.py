@@ -64,3 +64,11 @@ async def serve_parent_resource_image(filename: str):
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path)
+
+
+@router.get("/photo-of-week/{filename}")
+async def serve_photo_of_week_image(filename: str):
+    file_path = UPLOADS_DIR / "photo-of-week" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path)

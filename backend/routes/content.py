@@ -186,6 +186,77 @@ async def delete_spotlight(student_id: str, _=Depends(require_permission("delete
 
 
 # =============================================================================
+# PHOTO OF THE WEEK (manual pin)
+#
+# By default the homepage "Photo of the Week" auto-rotates recent photos from
+# articles/achievements/art/spotlight (see routes/articles.py). Setting a pin
+# here overrides that entirely — the homepage shows only this one photo,
+# no rotation, until it's unpinned.
+# =============================================================================
+photo_week_router = APIRouter(prefix="/api/photo-of-week", tags=["photo-of-week"])
+PHOTO_WEEK_UPLOADS_DIR = Path("/app/uploads/photo-of-week")
+PHOTO_WEEK_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+class PinnedPhoto(BaseModel):
+    image_url: str
+    title: str
+    subtitle: Optional[str] = None
+    link: Optional[str] = None
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PinnedPhotoInput(BaseModel):
+    image_url: Optional[str] = None
+    title: str
+    subtitle: Optional[str] = None
+    link: Optional[str] = None
+
+
+@photo_week_router.get("/pin")
+async def get_pinned_photo():
+    doc = await db.photo_of_week.find_one({"id": "current"}, {"_id": 0})
+    return doc
+
+
+@photo_week_router.put("/pin", response_model=PinnedPhoto)
+async def set_pinned_photo(payload: PinnedPhotoInput, _=Depends(require_permission("edit"))):
+    existing = await db.photo_of_week.find_one({"id": "current"})
+    image_url = payload.image_url or (existing.get("image_url") if existing else None)
+    if not image_url:
+        raise HTTPException(status_code=400, detail="Upload an image before pinning.")
+
+    doc = {
+        "id": "current",
+        "image_url": image_url,
+        "title": payload.title,
+        "subtitle": payload.subtitle,
+        "link": payload.link,
+        "updated_at": datetime.utcnow(),
+    }
+    await db.photo_of_week.update_one({"id": "current"}, {"$set": doc}, upsert=True)
+    return PinnedPhoto(**doc)
+
+
+@photo_week_router.delete("/pin")
+async def unpin_photo(_=Depends(require_permission("edit"))):
+    await db.photo_of_week.delete_one({"id": "current"})
+    return {"message": "Unpinned. Photo of the Week will go back to auto-rotating recent photos."}
+
+
+@photo_week_router.post("/upload-image")
+async def upload_photo_week_image(file: UploadFile = File(...), _=Depends(require_permission("edit"))):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    ext = file.filename.split(".")[-1]
+    unique = f"{uuid.uuid4()}.{ext}"
+    out = PHOTO_WEEK_UPLOADS_DIR / unique
+    with open(out, "wb") as buf:
+        shutil.copyfileobj(file.file, buf)
+    return {"image_url": f"/api/uploads/photo-of-week/{unique}"}
+
+
+# =============================================================================
 # ACHIEVEMENTS
 # =============================================================================
 class Achievement(BaseModel):
