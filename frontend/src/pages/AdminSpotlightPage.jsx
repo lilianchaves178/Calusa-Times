@@ -29,6 +29,9 @@ const AdminSpotlightPage = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // id or 'new'
   const [form, setForm] = useState(emptySpotlight);
+  const [formImage, setFormImage] = useState(null); // File picked in the create/edit form, not yet uploaded
+  const [formImagePreview, setFormImagePreview] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [savingImageFor, setSavingImageFor] = useState(null);
 
   const load = async () => {
@@ -57,27 +60,50 @@ const AdminSpotlightPage = () => {
   const openNew = () => {
     setEditing('new');
     setForm({ ...emptySpotlight, order: list.length + 1 });
+    setFormImage(null);
+    setFormImagePreview(null);
   };
 
   const openEdit = (student) => {
     setEditing(student.id);
     setForm({ ...student });
+    setFormImage(null);
+    setFormImagePreview(student.image_url ? assetUrl(student.image_url) : null);
   };
 
   const close = () => {
     setEditing(null);
     setForm(emptySpotlight);
+    setFormImage(null);
+    setFormImagePreview(null);
+  };
+
+  const pickFormImage = (file) => {
+    if (!file) return;
+    setFormImage(file);
+    setFormImagePreview(URL.createObjectURL(file));
   };
 
   const save = async () => {
+    setSaving(true);
     try {
+      let studentId = editing;
       if (editing === 'new') {
-        await api.post('/spotlight', form);
-        toast({ title: 'Spotlight student added' });
+        const res = await api.post('/spotlight', form);
+        studentId = res.data.id;
       } else {
         await api.put(`/spotlight/${editing}`, form);
-        toast({ title: 'Saved' });
       }
+
+      if (formImage) {
+        const fd = new FormData();
+        fd.append('file', formImage);
+        await api.post(`/spotlight/${studentId}/upload-image`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+
+      toast({ title: editing === 'new' ? 'Spotlight student added' : 'Saved' });
       close();
       load();
     } catch (e) {
@@ -86,6 +112,8 @@ const AdminSpotlightPage = () => {
         description: e?.response?.data?.detail || '',
         variant: 'destructive',
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -200,6 +228,32 @@ const AdminSpotlightPage = () => {
               className="mb-4"
               data-testid="spotlight-quote-input"
             />
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Photo</label>
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 border">
+                  {formImagePreview ? (
+                    <img src={formImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon size={22} className="text-gray-400" />
+                  )}
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer px-3 py-2 bg-gray-50 border rounded text-sm hover:bg-gray-100">
+                  <Upload size={14} />
+                  {formImagePreview ? 'Change photo' : 'Choose photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => pickFormImage(e.target.files[0])}
+                    data-testid="spotlight-form-image-input"
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Optional — attach it now, or add one later from the student's card.
+              </p>
+            </div>
             <div className="flex items-center gap-4 mb-4 flex-wrap">
               <label className="text-sm flex items-center gap-2">
                 Order:
@@ -220,9 +274,14 @@ const AdminSpotlightPage = () => {
                 Active (show on site)
               </label>
             </div>
-            <Button onClick={save} className="bg-yellow-600 hover:bg-yellow-700" data-testid="save-spotlight-btn">
+            <Button
+              onClick={save}
+              disabled={saving}
+              className="bg-yellow-600 hover:bg-yellow-700"
+              data-testid="save-spotlight-btn"
+            >
               <Save size={16} className="mr-2" />
-              Save
+              {saving ? 'Saving…' : 'Save'}
             </Button>
           </Card>
         )}
