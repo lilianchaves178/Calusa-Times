@@ -33,7 +33,7 @@ const AchievementsPage = () => {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Trophy size={32} className="text-[#FFD700]" />
-            <h1 className="text-4xl font-black text-[#0f1e42]">School Achievements & Awards</h1>
+            <h1 className="text-4xl font-black text-[#0f1e42]">School Achievements</h1>
           </div>
           <p className="text-gray-600">
             Celebrating the accomplishments of our incredible Calusa community!

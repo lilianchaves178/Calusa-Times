@@ -27,7 +27,7 @@ const navItems = [
   { path: '/mural', label: 'Community Mural', icon: MessageSquare },
   { path: '/student-art', label: 'Art Gallery', icon: Palette },
   { path: '/spotlight', label: 'Student Spotlight', icon: Users },
-  { path: '/achievements', label: 'School Achievements & Awards', icon: Trophy },
+  { path: '/achievements', label: 'School Achievements', icon: Trophy },
   { path: '/school-info', label: 'Info', icon: Info },
   { path: '/pta-corner', label: 'PTA Corner', icon: HeartHandshake },
   { path: '/contact', label: 'Contact', icon: Mail },
