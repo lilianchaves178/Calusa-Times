@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Mail,
   CalendarDays,
+  HeartHandshake,
   Menu,
   X,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ const navItems = [
   { path: '/spotlight', label: 'Spotlight', icon: Users },
   { path: '/achievements', label: 'Achievements', icon: Trophy },
   { path: '/school-info', label: 'Info', icon: Info },
+  { path: '/pta-corner', label: 'PTA Corner', icon: HeartHandshake },
   { path: '/contact', label: 'Contact', icon: Mail },
 ];
 
