@@ -87,4 +87,9 @@ android-sdk/-e
 credentials.json
 *.pem
 *.key
+*.crt
 .credentials
+
+# Server-local bind-mounted data (never belongs in the repo)
+/mongo/
+/uploads/
