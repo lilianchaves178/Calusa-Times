@@ -222,11 +222,10 @@ const EventsPage = () => {
                 const isToday = sameDay(d, today);
                 const dayEvents = eventsByDay.get(d.toDateString()) || [];
                 return (
-                  <button
+                  <div
                     key={i}
-                    type="button"
                     onClick={() => dayEvents[0] && setSelected(dayEvents[0])}
-                    className={`relative min-h-[86px] p-1.5 rounded-lg text-left transition-all border
+                    className={`relative min-h-[86px] p-1.5 rounded-lg text-left transition-all border cursor-pointer
                       ${inMonth ? 'bg-white hover:bg-[#FFF8E7]' : 'bg-gray-50/60 text-gray-400'}
                       ${isToday ? 'ring-2 ring-[#FFD700] border-[#FFD700]' : 'border-gray-100'}
                     `}
@@ -244,20 +243,30 @@ const EventsPage = () => {
                       {dayEvents.slice(0, 2).map((e) => {
                         const c = CATEGORY_COLORS[e.category] || CATEGORY_COLORS.OTHER;
                         return (
-                          <div
+                          <button
                             key={e.id}
-                            className={`truncate text-[10px] leading-tight px-1.5 py-0.5 rounded ${c.bg} ${c.text}`}
+                            type="button"
+                            onClick={(ev) => { ev.stopPropagation(); setSelected(e); }}
+                            className={`block w-full truncate text-left text-[10px] leading-tight px-1.5 py-0.5 rounded ${c.bg} ${c.text} hover:ring-1 hover:ring-black/20`}
                             title={e.title}
+                            data-testid={`calendar-event-chip-${e.id}`}
                           >
                             {e.title}
-                          </div>
+                          </button>
                         );
                       })}
                       {dayEvents.length > 2 && (
-                        <div className="text-[10px] text-gray-500 px-1.5">+{dayEvents.length - 2} more</div>
+                        <button
+                          type="button"
+                          onClick={(ev) => { ev.stopPropagation(); setSelected(dayEvents[2]); }}
+                          className="text-[10px] text-gray-500 px-1.5 hover:underline"
+                          data-testid={`calendar-cell-more-${d.toISOString().slice(0, 10)}`}
+                        >
+                          +{dayEvents.length - 2} more
+                        </button>
                       )}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

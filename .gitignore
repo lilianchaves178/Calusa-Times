@@ -93,3 +93,6 @@ credentials.json
 # Server-local bind-mounted data (never belongs in the repo)
 /mongo/
 /uploads/
+/local_uploads/
+*.gz
+calusa_backup*
