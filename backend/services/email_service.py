@@ -57,10 +57,15 @@ def _render_template(title: str, body_html: str, cta_label: str, cta_path: str) 
 
 
 async def _send_to(recipients: List[str], subject: str, html: str) -> None:
-    if not _API_KEY or not recipients:
+    if not _API_KEY:
+        logger.warning("_send_to called but RESEND_API_KEY is empty — skipping (to=%s)", recipients)
         return
+    if not recipients:
+        logger.warning("_send_to called with no recipients — skipping (subject=%s)", subject)
+        return
+    logger.info("Attempting Resend send: from=%s to=%s subject=%s", _SENDER, recipients, subject)
     try:
-        await asyncio.to_thread(
+        result = await asyncio.to_thread(
             resend.Emails.send,
             {
                 "from": _SENDER,
@@ -69,8 +74,9 @@ async def _send_to(recipients: List[str], subject: str, html: str) -> None:
                 "html": html,
             },
         )
+        logger.info("Resend send returned: %r", result)
     except Exception as exc:  # email must never break request flow
-        logger.warning("Resend send failed: %s", exc)
+        logger.warning("Resend send failed: %s: %s", type(exc).__name__, exc)
 
 
 def fire_and_forget(coro) -> None:
