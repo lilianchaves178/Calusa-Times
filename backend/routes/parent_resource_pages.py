@@ -13,6 +13,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
+from pymongo import ReturnDocument
 
 from routes.auth import require_permission
 
@@ -58,10 +59,13 @@ class ParentResourcePageUpdate(BaseModel):
 
 
 async def _ensure_page(category: str) -> dict:
-    """Create the category stub if it doesn't exist so the admin always sees all 6."""
-    existing = await db.parent_resource_pages.find_one({"category": category}, {"_id": 0})
-    if existing:
-        return existing
+    """Create the category stub if it doesn't exist so the admin always sees all 6.
+
+    Uses an atomic upsert (rather than find-then-insert) so two requests
+    arriving at nearly the same time can't both decide the page is missing
+    and each insert their own copy, which previously produced duplicate
+    cards on the public PTA Corner page.
+    """
     meta = DEFAULT_META[category]
     stub = ParentResourcePage(
         category=category,
@@ -70,8 +74,14 @@ async def _ensure_page(category: str) -> dict:
         body="",
         is_active=True,
     )
-    await db.parent_resource_pages.insert_one(stub.dict())
-    return stub.dict()
+    doc = await db.parent_resource_pages.find_one_and_update(
+        {"category": category},
+        {"$setOnInsert": stub.dict()},
+        upsert=True,
+        return_document=ReturnDocument.AFTER,
+        projection={"_id": 0},
+    )
+    return doc
 
 
 @router.get("", response_model=List[ParentResourcePage])

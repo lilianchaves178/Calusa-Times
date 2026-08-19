@@ -82,6 +82,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def create_indexes():
+    # Prevent duplicate parent-resource-page stubs (one per category) — a
+    # content migration once inserted a second copy of each because there
+    # was no uniqueness constraint on `category`.
+    try:
+        await db.parent_resource_pages.create_index("category", unique=True)
+    except Exception as exc:
+        logger.warning("Could not create unique index on parent_resource_pages.category: %s", exc)
+
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
