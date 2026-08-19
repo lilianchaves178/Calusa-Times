@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Save, Users, MessagesSquare, FileText, HeartHandshake, BookOpen, Info, ExternalLink, Image as ImageIcon,
+  ArrowLeft, Save, Users, MessagesSquare, FileText, HeartHandshake, BookOpen, Info, ExternalLink, Image as ImageIcon, Link2,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -29,6 +29,10 @@ const AdminParentResourcesPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [linkPanelOpen, setLinkPanelOpen] = useState(false);
+  const [linkText, setLinkText] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const bodyRef = useRef(null);
 
   const loadAll = async () => {
     setLoading(true);
@@ -96,6 +100,45 @@ const AdminParentResourcesPage = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const openLinkPanel = () => {
+    const ta = bodyRef.current;
+    if (ta) {
+      const selected = form.body.slice(ta.selectionStart, ta.selectionEnd);
+      setLinkText(selected);
+    } else {
+      setLinkText('');
+    }
+    setLinkUrl('');
+    setLinkPanelOpen(true);
+  };
+
+  const insertLink = () => {
+    let url = linkUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+      url = `https://${url}`;
+    }
+    const text = linkText.trim() || url;
+    const markdown = `[${text}](${url})`;
+    const ta = bodyRef.current;
+    if (ta) {
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const newBody = form.body.slice(0, start) + markdown + form.body.slice(end);
+      setForm((f) => ({ ...f, body: newBody }));
+      requestAnimationFrame(() => {
+        ta.focus();
+        const pos = start + markdown.length;
+        ta.setSelectionRange(pos, pos);
+      });
+    } else {
+      setForm((f) => ({ ...f, body: `${f.body}${markdown}` }));
+    }
+    setLinkPanelOpen(false);
+    setLinkText('');
+    setLinkUrl('');
   };
 
   const activeMeta = CATEGORIES.find((c) => c.key === active) || CATEGORIES[0];
@@ -233,11 +276,73 @@ const AdminParentResourcesPage = () => {
             {/* Body */}
             <label className="block text-sm font-semibold mb-1">Article body</label>
             <p className="text-xs text-gray-500 mb-2">
-              Write in plain text. Use <code>**bold**</code>, <code>- bullets</code>, and{' '}
-              <code>[link text](https://url)</code> for formatting. Put a blank line between paragraphs.
-              A line that's entirely <code>**bold**</code> is rendered as a heading.
+              Write in plain text. Use <code>**bold**</code> and <code>- bullets</code> for formatting.
+              Put a blank line between paragraphs. A line that's entirely <code>**bold**</code> is rendered
+              as a heading. Pasted web addresses (like https://...) are auto-linked automatically.
             </p>
+
+            <div className="flex items-center gap-2 mb-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={openLinkPanel}
+                data-testid="insert-link-btn"
+              >
+                <Link2 size={14} className="mr-1.5" />
+                Insert link
+              </Button>
+              <span className="text-xs text-gray-400">
+                e.g. "click here to check grades" → link text + the website address
+              </span>
+            </div>
+
+            {linkPanelOpen && (
+              <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 mb-3 flex flex-col sm:flex-row gap-2 sm:items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold mb-1">Link text</label>
+                  <Input
+                    value={linkText}
+                    onChange={(e) => setLinkText(e.target.value)}
+                    placeholder="e.g. Click here to check grades"
+                    data-testid="insert-link-text-input"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold mb-1">Website address</label>
+                  <Input
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="e.g. www.example.com/grades"
+                    data-testid="insert-link-url-input"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={insertLink}
+                    disabled={!linkUrl.trim()}
+                    className="bg-[#0f1e42] hover:bg-[#1a2d5a] text-white"
+                    data-testid="insert-link-confirm-btn"
+                  >
+                    Insert
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setLinkPanelOpen(false)}
+                    data-testid="insert-link-cancel-btn"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Textarea
+              ref={bodyRef}
               rows={16}
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
