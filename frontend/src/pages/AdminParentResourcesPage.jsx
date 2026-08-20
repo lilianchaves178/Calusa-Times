@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Save, Users, MessagesSquare, FileText, HeartHandshake, BookOpen, Info, ExternalLink, Image as ImageIcon, Link2,
+  ArrowLeft, Save, Users, MessagesSquare, FileText, HeartHandshake, BookOpen, Info, ExternalLink,
+  Image as ImageIcon, Link2, Bold, List, Heading, Eye, EyeOff,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -10,6 +11,7 @@ import { Textarea } from '../components/ui/textarea';
 import { useToast } from '../hooks/use-toast';
 import api, { assetUrl } from '../lib/api';
 import PexelsImagePicker from '../components/PexelsImagePicker';
+import { renderBody } from '../lib/parentResourceMarkdown';
 
 const CATEGORIES = [
   { key: 'PTA', Icon: HeartHandshake, tint: 'bg-pink-100 text-pink-800 border-pink-300' },
@@ -32,7 +34,10 @@ const AdminParentResourcesPage = () => {
   const [linkPanelOpen, setLinkPanelOpen] = useState(false);
   const [linkText, setLinkText] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const bodyRef = useRef(null);
+  const imageInputRef = useRef(null);
 
   const loadAll = async () => {
     setLoading(true);
@@ -99,6 +104,78 @@ const AdminParentResourcesPage = () => {
       toast({ title: 'Upload failed', variant: 'destructive' });
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Replace the current selection (or insert at the cursor) with `text`,
+  // then restore focus with the cursor placed right after the inserted text.
+  const insertAtCursor = (text, selectStart, selectEnd) => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      setForm((f) => ({ ...f, body: `${f.body}${text}` }));
+      return;
+    }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const newBody = form.body.slice(0, start) + text + form.body.slice(end);
+    setForm((f) => ({ ...f, body: newBody }));
+    requestAnimationFrame(() => {
+      ta.focus();
+      const from = selectStart != null ? start + selectStart : start + text.length;
+      const to = selectEnd != null ? start + selectEnd : from;
+      ta.setSelectionRange(from, to);
+    });
+  };
+
+  const applyBold = () => {
+    const ta = bodyRef.current;
+    const selected = ta ? form.body.slice(ta.selectionStart, ta.selectionEnd) : '';
+    if (selected) {
+      insertAtCursor(`**${selected}**`, 2, 2 + selected.length);
+    } else {
+      insertAtCursor('**bold text**', 2, 11);
+    }
+  };
+
+  const applyHeading = () => {
+    const ta = bodyRef.current;
+    const selected = ta ? form.body.slice(ta.selectionStart, ta.selectionEnd) : '';
+    const text = selected || 'Heading';
+    // Isolate on its own blank-line-separated block so it renders as an <h3>
+    insertAtCursor(`\n\n**${text}**\n\n`, 4, 4 + text.length);
+  };
+
+  const applyBulletList = () => {
+    const ta = bodyRef.current;
+    const selected = ta ? form.body.slice(ta.selectionStart, ta.selectionEnd) : '';
+    if (selected) {
+      const withBullets = selected
+        .split('\n')
+        .map((line) => (line.trim().startsWith('- ') ? line : `- ${line}`))
+        .join('\n');
+      insertAtCursor(withBullets, 0, withBullets.length);
+    } else {
+      insertAtCursor('\n- List item\n', 2, 13);
+    }
+  };
+
+  const insertBodyImage = async (file) => {
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.post(`/parent-resource-pages/${active}/upload-image`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const markdown = `\n\n![](${res.data.image_url})\n\n`;
+      insertAtCursor(markdown, markdown.length, markdown.length);
+      toast({ title: 'Image added' });
+    } catch {
+      toast({ title: 'Image upload failed', variant: 'destructive' });
+    } finally {
+      setUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
     }
   };
 
@@ -274,14 +351,38 @@ const AdminParentResourcesPage = () => {
             </div>
 
             {/* Body */}
-            <label className="block text-sm font-semibold mb-1">Article body</label>
+            <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+              <label className="block text-sm font-semibold">Article body</label>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowPreview((s) => !s)}
+                data-testid="toggle-preview-btn"
+              >
+                {showPreview ? <EyeOff size={14} className="mr-1.5" /> : <Eye size={14} className="mr-1.5" />}
+                {showPreview ? 'Hide preview' : 'Show preview'}
+              </Button>
+            </div>
             <p className="text-xs text-gray-500 mb-2">
-              Write in plain text. Use <code>**bold**</code> and <code>- bullets</code> for formatting.
-              Put a blank line between paragraphs. A line that's entirely <code>**bold**</code> is rendered
-              as a heading. Pasted web addresses (like https://...) are auto-linked automatically.
+              Use the buttons below to add bold text, bullet lists, headings, links, and illustrations —
+              no need to type any special formatting yourself. Pasted web addresses (like https://...)
+              are auto-linked automatically.
             </p>
 
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <Button type="button" size="sm" variant="outline" onClick={applyBold} data-testid="bold-btn">
+                <Bold size={14} className="mr-1.5" />
+                Bold
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={applyBulletList} data-testid="bullet-list-btn">
+                <List size={14} className="mr-1.5" />
+                Bullet list
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={applyHeading} data-testid="heading-btn">
+                <Heading size={14} className="mr-1.5" />
+                Heading
+              </Button>
               <Button
                 type="button"
                 size="sm"
@@ -292,9 +393,25 @@ const AdminParentResourcesPage = () => {
                 <Link2 size={14} className="mr-1.5" />
                 Insert link
               </Button>
-              <span className="text-xs text-gray-400">
-                e.g. "click here to check grades" → link text + the website address
-              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={uploadingImage}
+                data-testid="insert-image-btn"
+              >
+                <ImageIcon size={14} className="mr-1.5" />
+                {uploadingImage ? 'Uploading…' : 'Insert illustration'}
+              </Button>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => insertBodyImage(e.target.files?.[0] || null)}
+                data-testid="insert-image-input"
+              />
             </div>
 
             {linkPanelOpen && (
@@ -341,14 +458,27 @@ const AdminParentResourcesPage = () => {
               </div>
             )}
 
-            <Textarea
-              ref={bodyRef}
-              rows={16}
-              value={form.body}
-              onChange={(e) => setForm({ ...form, body: e.target.value })}
-              className="mb-4 font-mono text-sm"
-              data-testid="page-body-input"
-            />
+            {showPreview ? (
+              <div
+                className="mb-4 border border-gray-200 rounded-lg p-6 bg-white max-h-[420px] overflow-y-auto"
+                data-testid="body-preview"
+              >
+                {form.body ? (
+                  renderBody(form.body)
+                ) : (
+                  <p className="text-gray-400 italic text-sm">Nothing written yet — switch back to editing to add content.</p>
+                )}
+              </div>
+            ) : (
+              <Textarea
+                ref={bodyRef}
+                rows={16}
+                value={form.body}
+                onChange={(e) => setForm({ ...form, body: e.target.value })}
+                className="mb-4 font-mono text-sm"
+                data-testid="page-body-input"
+              />
+            )}
 
             <label className="flex items-center gap-2 text-sm cursor-pointer mb-4">
               <input

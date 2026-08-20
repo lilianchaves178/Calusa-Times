@@ -150,3 +150,27 @@ async def upload_hero_image(
         {"$set": {"hero_image_url": url, "updated_at": datetime.utcnow()}},
     )
     return {"hero_image_url": url}
+
+
+@router.post("/{category}/upload-image")
+async def upload_body_image(
+    category: str,
+    file: UploadFile = File(...),
+    _=Depends(require_permission("edit")),
+):
+    """Upload an illustration/photo to embed inline in the article body
+    (as opposed to /upload-hero, which sets the one banner image at top)."""
+    category = category.upper()
+    if category not in CATEGORY_SET:
+        raise HTTPException(status_code=400, detail="Unknown category")
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    ext = (file.filename.split(".")[-1] or "jpg").lower()
+    unique = f"{uuid.uuid4()}.{ext}"
+    out_dir = Path("/app/uploads/parent-resources")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / unique
+    with open(out, "wb") as buf:
+        shutil.copyfileobj(file.file, buf)
+    url = f"/api/uploads/parent-resources/{unique}"
+    return {"image_url": url}
