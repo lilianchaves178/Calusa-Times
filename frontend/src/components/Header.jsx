@@ -29,7 +29,7 @@ const navItems = [
   { path: '/spotlight', label: 'Student Spotlight', icon: Users },
   { path: '/achievements', label: 'School Achievements', icon: Trophy },
   { path: '/school-info', label: 'Info', icon: Info },
-  { path: '/pta-corner', label: 'PTA Corner', icon: HeartHandshake },
+  { path: '/pta-corner', label: 'Parent Corner', icon: HeartHandshake },
   { path: '/contact', label: 'Contact', icon: Mail },
 ];
 

@@ -35,7 +35,7 @@ const PTACornerPage = () => {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex items-center gap-3 mb-4">
           <HeartHandshake size={32} className="text-[#0f1e42]" />
-          <h1 className="text-4xl font-black text-[#0f1e42]">PTA Corner</h1>
+          <h1 className="text-4xl font-black text-[#0f1e42]">Parent Corner</h1>
         </div>
         <p className="text-gray-600 mb-10 max-w-2xl">
           Your one-stop hub for everything Calusa families need. Tap a card below to read the full guide.

@@ -46,7 +46,7 @@ const ParentResourcePage = () => {
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#0f1e42] mb-6"
           data-testid="back-to-info-btn"
         >
-          <ArrowLeft size={14} /> Back to PTA Corner
+          <ArrowLeft size={14} /> Back to Parent Corner
         </Link>
 
         {loading ? (
